@@ -1,23 +1,108 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import subprocess
 import evdev
 import time
+import sys
+import os
 
 # enums
 KEY_UP = 0
 KEY_DOWN = 1
 KEY_HOLD = 2
 
+# reference list
+KEY_CODES = evdev.ecodes.keys.values()
+
+# maps
 KEY_MAP = {}
 KEY_CALLBACK_MAP = {}
+KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
+        "ON_RELEASE": KEY_UP,
+        "ON_HOLD": KEY_HOLD}
 
-PAD = "/dev/input/by-id/usb-099a_USB_Keypad-event-kbd"
+def loadConfig(filePath):
+    if not os.path.isfile(filePath):
+        print("Can't find file: %s" % filePath)
 
+        return
+
+    configFile = open(filePath, 'r')
+    selectedDevice = None
+    selectedKey = None
+    lineNum = 0
+    bindCount = 0
+
+    for line in configFile.readlines():
+        lineNum += 1
+        line = line.rstrip() # remove newlines
+
+        # obey formatting rules:
+        #   if we're currently configuring a key and the line doesn't start with
+        #   either a tab or a space, assume we're done with the current key and
+        #   are moving to a new one.
+        if selectedKey and not (line[0] in [' ', '\t']):
+            selectedKey = None
+
+        # strip all jargon from the front of the string
+        line = line.lstrip()
+
+        # let the user comment their config
+        if line.startswith('#'):
+            continue
+        
+        # if we havn't gotten the device yet, assume the first line is the path
+        # to it.
+        if not selectedDevice:
+            selectedDevice = line
+        elif not selectedKey:
+            # define the key we're configuring
+            selectedKey = line
+        else:
+            # get the event and the bind
+            event, _, bind = line.partition(' ')
+
+            # if the event isn't one we support, tell the user
+            if not event in KEYEVENT_REMAP:
+                print("Config error on line %i:\n\tUnknown event for key '%s': %s" %
+                        (lineNum, selectedKey, event))
+
+                return
+
+            # bind parsing:
+            #   split the string and check if the first argument is an action we
+            #   support.
+            bindArgs = bind.split(' ')
+            action = bindArgs[0].lower()
+
+            if action == "key":
+                #TODO: Check for keyup/keydown
+                keyCode = bindArgs[1]
+
+                # make sure the keycode is valid
+                if not keyCode in KEY_CODES:
+                    print("Config error on line %i:\n\tUnknown keycode for key '%s': %s" %
+                            (lineNum, selectedKey, keyCode))
+                    
+                    return
+
+                assignKey(selectedKey, KEYEVENT_REMAP[event], lambda: runProgram("qutebrowser"))
+                bindCount += 1
+            elif action == "run":
+                command = ' '.join(bindArgs[1:])
+                assignKey(selectedKey, KEYEVENT_REMAP[event], lambda: runProgram(command))
+                bindCount += 1
+
+            # print(event, bind)
+
+    configFile.close()
+
+    print("Loaded %i bind%s." % (bindCount, 's' * (bindCount != 1)))
+
+    main(selectedDevice)
 
 def handleKey(event):
     now = time.time()
-    # last_state = 0
     last_hit = now
 
     if not event.keycode in KEY_MAP:
@@ -26,12 +111,10 @@ def handleKey(event):
 
     else:
         last_hit = KEY_MAP[event.keycode]["last_hit"]
-        # last_state = KEY_MAP[event.keycode]["state"]
 
         KEY_MAP[event.keycode]["state"] = event.keystate
         KEY_MAP[event.keycode]["last_hit"] = now
 
-    # if now - last_hit < 
     if KEY_MAP[event.keycode]["state"] == KEY_DOWN:
         print("Pressed: %s" % event.keycode)
     elif KEY_MAP[event.keycode]["state"] == KEY_HOLD:
@@ -55,29 +138,57 @@ def assignKey(keycode, state, callback):
 def runProgram(command):
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
-def main():
-    device = evdev.InputDevice(PAD)
-    i = 0
+def main(devicePath):
+    # open the device via evdev
+    device = evdev.InputDevice(devicePath)
 
-    assignKey("KEY_KP1", KEY_DOWN, lambda: runProgram("qutebrowser"))
-    assignKey("KEY_KP2", KEY_DOWN, lambda: runProgram("st"))
-
+    # start consuming all inputs from the device
     device.grab()
-    for event in device.read_loop():
-        if event.type == evdev.ecodes.EV_KEY:
-            keyEvent = evdev.categorize(event)
-            # print(keyEvent.event)
-            handleKey(keyEvent)
-            # print("\tkey: %s" % keyEvent.keycode)
-            # print("\tstate: %s" % keyEvent.keystate)
-            # print("\thold: %s" % keyEvent.key_hold)
-            i += 1
 
-            if i == 25:
-                break
+    # main loop
+    #   listen to inputs and react to them.
+    #   try..except safely closes the device and exits
+    try:
+        for event in device.read_loop():
+            if event.type == evdev.ecodes.EV_KEY:
+                keyEvent = evdev.categorize(event)
 
-    device.ungrab()
+                handleKey(keyEvent)
+    except KeyboardInterrupt:
+        print("Interrupt.")
+    except Exception as e:
+        print(e)
+
+    try:
+        device.ungrab()
+    except Exception as e:
+        print(e)
+
+    print("Done")
+
+def usage():
+    print("MacroPad.py - flags (2019)")
+    print("Usage:")
+    print("\t<file>\t\t - run MacroPad with configuration file")
+    print("\t--detect <file>\t - select device and output default config file")
+    print("\t--show <file>\t - print all key inputs to the terminal (will not fire binds)")
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 2:
+        arg = sys.argv[1]
+
+        if arg == "--help":
+            usage()
+        else:
+            loadConfig(arg)
+    elif len(sys.argv) == 3:
+        command, file = sys.argv[1:]
+
+        if command == "--detect":
+            detectDevice(file)
+    elif len(sys.argv) > 3:
+        print("Too many arguments.\n")
+    else:
+        usage()
+
