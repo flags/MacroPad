@@ -145,6 +145,8 @@ def assignKey(keycode, state, callback):
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
 def runProgram(command):
+    print(command)
+    return
     # do the UNIX double-fork magic, see Stevens' "Advanced 
     # Programming in the UNIX Environment" for details (ISBN 0201563177)
     try: 
