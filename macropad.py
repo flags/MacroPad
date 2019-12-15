@@ -37,6 +37,9 @@ def loadConfig(filePath):
         lineNum += 1
         line = line.rstrip() # remove newlines
 
+        if not len(line):
+            continue
+
         # obey formatting rules:
         #   if we're currently configuring a key and the line doesn't start with
         #   either a tab or a space, assume we're done with the current key and
@@ -139,8 +142,37 @@ def assignKey(keycode, state, callback):
 
     KEY_CALLBACK_MAP[keycode][state] = callback
 
+# the following function wasn't written by me.
+# it can found in full at: https://stackoverflow.com/a/6011298
 def runProgram(command):
-    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    # do the UNIX double-fork magic, see Stevens' "Advanced 
+    # Programming in the UNIX Environment" for details (ISBN 0201563177)
+    try: 
+        pid = os.fork() 
+        if pid > 0:
+            # parent process, return and keep running
+            return
+    except Exception as e:
+        print(e)
+        sys.exit(1)
+
+    os.setsid()
+
+    # do second fork
+    try: 
+        pid = os.fork() 
+        if pid > 0:
+            # exit from second parent
+            sys.exit(0) 
+    except Exception as e:
+        print(e)
+        sys.exit(1)
+
+    # do stuff
+    subprocess.call(command, shell=True, stdout=subprocess.PIPE)
+
+    # all done
+    os._exit(os.EX_OK)
 
 def keyInput(event, keycode):
     with evdev.uinput.UInput() as ui:
