@@ -6,6 +6,9 @@ import time
 import sys
 import os
 
+
+DEBUG = False
+
 # enums
 KEY_UP = 0
 KEY_DOWN = 1
@@ -21,6 +24,9 @@ KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_RELEASE": KEY_UP,
         "ON_HOLD": KEY_HOLD}
 
+# global
+CURRENT_LAYER = "default"
+
 def loadConfig(filePath):
     if not os.path.isfile(filePath):
         print("Can't find file: %s" % filePath)
@@ -30,6 +36,7 @@ def loadConfig(filePath):
     configFile = open(filePath, 'r')
     selectedDevice = None
     selectedKey = None
+    selectedLayer = "default"
     lineNum = 0
     bindCount = 0
 
@@ -37,27 +44,47 @@ def loadConfig(filePath):
         lineNum += 1
         line = line.rstrip() # remove newlines
 
-        if not len(line):
-            continue
-
         # obey formatting rules:
         #   if we're currently configuring a key and the line doesn't start with
         #   either a tab or a space, assume we're done with the current key and
         #   are moving to a new one.
-        if selectedKey and not (line[0] in [' ', '\t']):
-            selectedKey = None
+        #   if the above criteria is met a second time, we reset the layer.
+        if not len(line) or not (line[0] in [' ', '\t']):
+            if selectedKey:
+                selectedKey = None
+            elif not selectedLayer == "default":
+                selectedLayer = "default"
 
         # strip all jargon from the front of the string
         line = line.lstrip()
 
+        if not len(line):
+            continue
+
         # let the user comment their config
         if line.startswith('#'):
+            continue
+
+        if line.lower().startswith("layer"):
+            layerInfo = line.split(' ')
+
+            if not len(layerInfo) >= 2:
+                print("Config error on line %i:\n\tMissing layer name" %
+                        (lineNum))
+
+                return
+
+            selectedLayer = ' '.join(layerInfo[1:])
+
             continue
         
         # if we havn't gotten the device yet, assume the first line is the path
         # to it.
         if not selectedDevice:
             selectedDevice = line
+
+            if DEBUG:
+                break
         elif not selectedKey:
             # define the key we're configuring
             selectedKey = line
@@ -89,26 +116,30 @@ def loadConfig(filePath):
                     
                     return
 
-                assignKey(selectedKey, KEYEVENT_REMAP[event],
-                        lambda: keyInput("key", keyCode))
+                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
+                        lambda keyCode=keyCode: keyInput("key", keyCode))
 
                 bindCount += 1
             elif action == "run":
                 command = ' '.join(bindArgs[1:])
-                assignKey(selectedKey, KEYEVENT_REMAP[event],
-                        lambda: runProgram(command))
+                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
+                        lambda command=command: runCommand(command))
 
                 bindCount += 1
+            elif action == "layer":
+                layer = ' '.join(bindArgs[1:])
 
-            # print(event, bind)
+                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
+                        lambda layer=layer: setLayer(layer))
 
     configFile.close()
 
-    print("Loaded %i bind%s." % (bindCount, 's' * (bindCount != 1)))
+    if not DEBUG:
+        print("Loaded %i bind%s." % (bindCount, 's' * (bindCount != 1)))
 
     main(selectedDevice)
 
-def handleKey(event):
+def handleKey(event, debug=False):
     now = time.time()
     last_hit = now
 
@@ -122,31 +153,42 @@ def handleKey(event):
         KEY_MAP[event.keycode]["state"] = event.keystate
         KEY_MAP[event.keycode]["last_hit"] = now
 
-    if KEY_MAP[event.keycode]["state"] == KEY_DOWN:
-        print("Pressed: %s" % event.keycode)
-    elif KEY_MAP[event.keycode]["state"] == KEY_HOLD:
-        print("Hold: %s" % event.keycode)
-    elif KEY_MAP[event.keycode]["state"] == KEY_UP:
-        print("Released: %s" % event.keycode)
+    if debug:
+        if KEY_MAP[event.keycode]["state"] == KEY_DOWN:
+            print("%s - KEY_DOWN" % event.keycode)
+        elif KEY_MAP[event.keycode]["state"] == KEY_HOLD:
+            print("%s - KEY_HOLD" % event.keycode)
+        elif KEY_MAP[event.keycode]["state"] == KEY_UP:
+            print("%s - KEY_UP" % event.keycode)
+    else:
+        if event.keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
+            if event.keystate in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode]:
+                KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode][event.keystate]()
 
-    if event.keycode in KEY_CALLBACK_MAP:
-        if event.keystate in KEY_CALLBACK_MAP[event.keycode]:
-            KEY_CALLBACK_MAP[event.keycode][event.keystate]()
+def assignKey(layer, keycode, state, callback):
+    if not layer in KEY_CALLBACK_MAP:
+        KEY_CALLBACK_MAP[layer] = {}
 
-def assignKey(keycode, state, callback):
-    if keycode in KEY_CALLBACK_MAP:
-        if state in KEY_CALLBACK_MAP[keycode]:
+    if keycode in KEY_CALLBACK_MAP[layer]:
+        if state in KEY_CALLBACK_MAP[layer][keycode]:
             raise Exception("Key already bound for state %s: %s" % (state, keycode))
     else:
-        KEY_CALLBACK_MAP[keycode] = {}
+        KEY_CALLBACK_MAP[layer][keycode] = {}
 
-    KEY_CALLBACK_MAP[keycode][state] = callback
+    KEY_CALLBACK_MAP[layer][keycode][state] = callback
+
+def setLayer(layer):
+    global CURRENT_LAYER
+
+    CURRENT_LAYER = layer
+
+    print("debug: layer = %s" % layer)
 
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
-def runProgram(command):
-    print(command)
-    return
+def runCommand(command):
+    setLayer("default")
+
     # do the UNIX double-fork magic, see Stevens' "Advanced 
     # Programming in the UNIX Environment" for details (ISBN 0201563177)
     try: 
@@ -156,6 +198,7 @@ def runProgram(command):
             return
     except Exception as e:
         print(e)
+
         sys.exit(1)
 
     os.setsid()
@@ -168,6 +211,7 @@ def runProgram(command):
             sys.exit(0) 
     except Exception as e:
         print(e)
+
         sys.exit(1)
 
     # do stuff
@@ -196,7 +240,7 @@ def main(devicePath):
             if event.type == evdev.ecodes.EV_KEY:
                 keyEvent = evdev.categorize(event)
 
-                handleKey(keyEvent)
+                handleKey(keyEvent, debug=DEBUG)
     except KeyboardInterrupt:
         print("Interrupt.")
     except Exception as e:
@@ -230,8 +274,14 @@ if __name__ == "__main__":
 
         if command == "--detect":
             detectDevice(file)
+        elif command == "--show":
+            DEBUG = True
+
+            loadConfig(file)
     elif len(sys.argv) > 3:
         print("Too many arguments.\n")
+
+        usage()
     else:
         usage()
 
