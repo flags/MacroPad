@@ -86,11 +86,15 @@ def loadConfig(filePath):
                     
                     return
 
-                assignKey(selectedKey, KEYEVENT_REMAP[event], lambda: runProgram("qutebrowser"))
+                assignKey(selectedKey, KEYEVENT_REMAP[event],
+                        lambda: keyInput("key", keyCode))
+
                 bindCount += 1
             elif action == "run":
                 command = ' '.join(bindArgs[1:])
-                assignKey(selectedKey, KEYEVENT_REMAP[event], lambda: runProgram(command))
+                assignKey(selectedKey, KEYEVENT_REMAP[event],
+                        lambda: runProgram(command))
+
                 bindCount += 1
 
             # print(event, bind)
@@ -137,6 +141,11 @@ def assignKey(keycode, state, callback):
 
 def runProgram(command):
     subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+
+def keyInput(event, keycode):
+    with evdev.uinput.UInput() as ui:
+        ui.write(evdev.ecodes.EV_KEY, evdev.ecodes.ecodes[keycode], 1)
+        ui.syn()
 
 def main(devicePath):
     # open the device via evdev
