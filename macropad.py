@@ -171,7 +171,7 @@ def assignKey(layer, keycode, state, callback):
 
     if keycode in KEY_CALLBACK_MAP[layer]:
         if state in KEY_CALLBACK_MAP[layer][keycode]:
-            raise Exception("Key already bound for state %s: %s" % (state, keycode))
+            raise Exception("Key '%s' already bound for state '%s' on layer '%s'" % (keycode, state, layer))
     else:
         KEY_CALLBACK_MAP[layer][keycode] = {}
 
