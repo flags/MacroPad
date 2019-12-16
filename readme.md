@@ -32,13 +32,13 @@ Open up a terminal alongside your text editor and run:
 Now press any key on the input device chosen in the last step. You will see
 something along the lines of:
 
-`
+```
 KEY_KP1 - KEY_DOWN
 KEY_KP1 - KEY_HOLD
 KEY_KP1 - KEY_HOLD
 KEY_KP1 - KEY_HOLD
 KEY_KP1 - KEY_UP
-`
+```
 
 (output will differ based on key and duration of the key press)
 
@@ -56,11 +56,11 @@ To configure a key, follow this format:
 
 Where `bind` is:
 
-`
+```
 RUN /path/to/script
 KEY <keycode>
 KEY UP/DOWN <keycode> #for specific actions
-`
+```
 
 Save the config file. Now run:
 
@@ -71,7 +71,7 @@ Save the config file. Now run:
 Layers are MacroPad's way to managing multiple different binds per key. It works
 as follows:
 
-`
+```
 Numpad 1: switch to "web" layer
 Numpad 2: switch to "terminal" layer
 
@@ -82,7 +82,7 @@ Layer: web
 Layer: terminal
 	Numpad 1: open terminal to code directory
 	Numper 2: open terminal to site directory
-`
+```
 
 To open my web brower to geekhack.org, I'd type `12` into the configred keypad.
 A similar keypress is performed for opening a terminal to my code directory:
@@ -90,7 +90,7 @@ A similar keypress is performed for opening a terminal to my code directory:
 
 ## Config (with Layers)
 
-`
+```
 <device path>
 
 KEY_KP1
@@ -112,4 +112,4 @@ LAYER terminal
 
 	KEY_KP2
 		ON_PRESS RUN cd ~/site && st
-
+```
