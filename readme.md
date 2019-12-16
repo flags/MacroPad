@@ -60,6 +60,7 @@ Where `bind` is:
 RUN /path/to/script
 KEY <keycode>
 KEY UP/DOWN <keycode> #for specific actions
+LAYER <layer>
 ```
 
 Save the config file. Now run:
@@ -88,7 +89,7 @@ To open my web brower to geekhack.org, I'd type `12` into the configred keypad.
 A similar keypress is performed for opening a terminal to my code directory:
 `21`.
 
-## Config (with Layers)
+Here's an example configuration file that shows layers in action:
 
 ```
 <device path>
