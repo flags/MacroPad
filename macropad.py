@@ -229,7 +229,8 @@ def runCommand(command):
         sys.exit(1)
 
     # do stuff
-    subprocess.call(command, shell=True, stdout=subprocess.PIPE)
+    subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
     # all done
     os._exit(os.EX_OK)

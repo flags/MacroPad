@@ -13,8 +13,8 @@ mapping of the device on the fly. See `Layering` below.
 
 ## Use
 
-First, ensure you have the `evdev` module installed via `pip` or your distro's
-package manager. In Arch Linux, use `python-evdev`.
+First, ensure you have the `evdev` Python module installed via `pip` or your
+distro's package manager. In Arch Linux, use `python-evdev`.
 
 Clone this repo to a directory of your choosing, then run:
 
@@ -47,12 +47,12 @@ pressed. This can be ignored.
 
 To configure a key, follow this format:
 
-`
+```
 <KEYCODE>
 	ON_PRESS <BIND>
 	ON_RELEASE <BIND>
 	ON_HOLD <BIND>
-`
+```
 
 Where `bind` is:
 
