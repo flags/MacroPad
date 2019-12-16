@@ -26,6 +26,9 @@ KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
 
 # global
 CURRENT_LAYER = "default"
+LAYER_TIMEOUT_MAX = 1.5
+LAST_KEY_EVENT_TIME = 0
+
 
 def loadConfig(filePath):
     if not os.path.isfile(filePath):
@@ -140,13 +143,13 @@ def loadConfig(filePath):
     main(selectedDevice)
 
 def handleKey(event, debug=False):
+    global LAST_KEY_EVENT_TIME
+
     now = time.time()
     last_hit = now
 
     if not event.keycode in KEY_MAP:
-        KEY_MAP[event.keycode] = {"state": event.keystate,
-                "last_hit": now}
-
+        KEY_MAP[event.keycode] = {"state": event.keystate, "last_hit": now}
     else:
         last_hit = KEY_MAP[event.keycode]["last_hit"]
 
@@ -163,7 +166,18 @@ def handleKey(event, debug=False):
     else:
         if event.keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
             if event.keystate in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode]:
+                # if the amount of time since the last triggered event is
+                # greater than some amount, then switch back to the default
+                # layer before executing.
+                # this prevents lingering inputs from affecting future inputs.
+                if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
+                    setLayer("default")
+
+                # pull the callback out of the dictionary and call it
                 KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode][event.keystate]()
+
+                # record the time at which the event was executed. see above
+                LAST_KEY_EVENT_TIME = now
 
 def assignKey(layer, keycode, state, callback):
     if not layer in KEY_CALLBACK_MAP:

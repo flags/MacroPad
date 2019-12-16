@@ -101,15 +101,15 @@ KEY_KP2
 
 LAYER web
 	KEY_KP1
-		ON_PRESS run qutebrowser duckduckgo.com
+		ON_PRESS RUN qutebrowser duckduckgo.com
 
 	KEY_KP2
-		ON_PRESS run qutebrowser geekhack.org
+		ON_PRESS RUN qutebrowser geekhack.org
 
 LAYER terminal
 	KEY_KP1
-		ON_PRESS run cd ~/code && st
+		ON_PRESS RUN cd ~/code && st
 
 	KEY_KP2
-		ON_PRESS run cd ~/site && st
+		ON_PRESS RUN cd ~/site && st
 
