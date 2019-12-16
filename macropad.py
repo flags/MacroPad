@@ -30,6 +30,85 @@ LAYER_TIMEOUT_MAX = 1.5
 LAST_KEY_EVENT_TIME = 0
 
 
+def detectDevice():
+    maxEventCount = 0
+    bestDevice = None
+    bestDevicePath = None
+    loops = 5
+    baseDir = "/dev/input/by-id/"
+
+    print("Welcome to MacroPad-detect")
+    print("\nMake sure your device is plugged in, then press ENTER.")
+
+    input()
+
+    devices = [os.path.join(baseDir, p) for p in os.listdir(baseDir)]
+
+    print("** A total of %i devices were detected. **\n" % len(devices))
+    print("MacroPad will now help you select the device you want to config.")
+    print("\n1) Press ENTER")
+    print("2) Hold down a key on the device you want to select")
+    print("3) Make sure no other device is in use (mouse, etc.")
+    print("4) De-focus this window!")
+    print("\nPress ENTER to begin.")
+
+    input()
+
+    print("** TEST STARTING IN 5 SECONDS - DE-FOCUS THIS WINDOW! **")
+
+    time.sleep(5)
+
+    print("\nPress and hold a key on your device.")
+
+    while loops:
+        loops -= 1
+
+        for devicePath in devices:
+            # print(devicePath)
+
+            try:
+                device = evdev.device.InputDevice(devicePath)
+            except:
+                pass
+            # print(device.path, device.name, device.phys)
+            try:
+                eventCount = 0
+
+                for event in device.read():
+                    eventCount += 1
+
+                if eventCount > maxEventCount:
+                    maxEventCount = eventCount
+                    bestDevice = device
+                    bestDevicePath = devicePath
+            except BlockingIOError:
+                pass
+
+            time.sleep(.01)
+
+    # device = bestDevice
+    if not bestDevice:
+        print("\nNo device found.")
+
+        return
+
+    print("\nDevice found: %s" % bestDevice.name)
+
+    print("\nMacroPad will now generate a config file for this device.")
+
+    fileName = input("Enter file name: ")
+
+    try:
+        configFile = open(fileName, 'w')
+
+        configFile.write("%s\n\n# place binds below this line\n" % bestDevicePath)
+        configFile.close()
+
+        print("\nFile saved.\n")
+        print("See `readme.md` for configuration help.")
+    except Exception as e:
+        print(e)
+
 def loadConfig(filePath):
     if not os.path.isfile(filePath):
         print("Can't find file: %s" % filePath)
@@ -282,17 +361,21 @@ if __name__ == "__main__":
 
         if arg == "--help":
             usage()
+        elif arg == "--detect":
+            detectDevice()
         else:
             loadConfig(arg)
     elif len(sys.argv) == 3:
         command, file = sys.argv[1:]
 
-        if command == "--detect":
-            detectDevice(file)
-        elif command == "--show":
+        if command == "--show":
             DEBUG = True
 
             loadConfig(file)
+        else:
+            print("Unknown command.")
+
+            usage()
     elif len(sys.argv) > 3:
         print("Too many arguments.\n")
 
