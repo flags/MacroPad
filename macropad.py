@@ -64,13 +64,11 @@ def detectDevice():
         loops -= 1
 
         for devicePath in devices:
-            # print(devicePath)
-
             try:
                 device = evdev.device.InputDevice(devicePath)
             except:
                 pass
-            # print(device.path, device.name, device.phys)
+
             try:
                 eventCount = 0
 
@@ -86,7 +84,6 @@ def detectDevice():
 
             time.sleep(.01)
 
-    # device = bestDevice
     if not bestDevice:
         print("\nNo device found.")
 
@@ -101,7 +98,7 @@ def detectDevice():
     try:
         configFile = open(fileName, 'w')
 
-        configFile.write("%s\n\n# place binds below this line\n" % bestDevicePath)
+        configFile.write("%s\n\n# place binds below this line\n\n" % bestDevicePath)
         configFile.close()
 
         print("\nFile saved.\n")
