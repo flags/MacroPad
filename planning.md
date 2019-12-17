@@ -40,7 +40,10 @@ Pressing `5` makes the current window fullscreen.
 
 `/` opens up the snippits layer. These are terminal commands.
 
-`.` navigates to the `~/.config` directory.
+`4` goes to `~/code/MacroPad`.
+
+`.` navigates to the `~/.config` directory. It can also be held, after which
+pressing `5` will run `vim ~/.config/i3/config`.
 
 ### Common Inputs
 

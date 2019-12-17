@@ -211,6 +211,8 @@ def loadConfig(filePath):
                 assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
                         lambda layer=layer: setLayer(layer))
 
+                bindCount += 1
+
     configFile.close()
 
     if not DEBUG:
