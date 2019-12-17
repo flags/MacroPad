@@ -218,6 +218,10 @@ def loadConfig(filePath):
 
     main(selectedDevice)
 
+def showKey(key, command):
+    subprocess.Popen("notify-send -t %i \"%s - %s\"" % (LAYER_TIMEOUT_MAX * 1000, key, command),
+            shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 def handleKey(event, debug=False):
     global LAST_KEY_EVENT_TIME
 
@@ -273,6 +277,10 @@ def setLayer(layer):
     CURRENT_LAYER = layer
 
     print("debug: layer = %s" % layer)
+
+    # experimenting with osd for command readout
+    # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
+        # showKey(str(keycode), "duh")
 
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
