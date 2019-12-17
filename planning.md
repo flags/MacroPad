@@ -1,76 +1,51 @@
 # MacroPad Planning
-## Creating a Layout
+## Milestones
+### M1: Basic Featureset
 
-The best piece of advice I can give is to define your goals. This may seem
-obvious, but a bit of planning can avoid massive reconfiguring and unlearning
-bad habits/muscle memory later on.
+Done at time of writing.
 
-Here the goals for my main macropad:
+* [X] Working config
+* [X] Layers
+* [X] Device detection
 
-* Workspace organization (i.e., window management.)
-* Quick launching of dev tools
-* "Bash snippits" for quick terminal use
+This included 2 days of testing.
 
-The two main layers will be `terminal` and `workspace`.
+### M2: Testing and Use Notes
 
-By default I will mark off the directional keys on the numpad (`2, 4, 6, 8`) for
-movement between windows. This is a function I want to work on the default layer
-since holding a modkey would require weird hand and finger placement.
+Heavy testing and notetaking phase.
 
-### Terminal Layer
+* Find and implement different usecases
+* Notetaking on config syntax and better approaches
 
-`1` will trigger the terminal layer.
+Sprint to implement as many different input types as possible. Generate multiple
+configs and consider two different macropads.
 
-Pressing and releasing `1` will spawn a terminal, effectively turning `1` into a
-modkey. Holding `1` and hitting `2, 3, 4` will spawn a terminal in a specific
-directory depending on key. My current project's folder will be bound to `4`,
-for example.
+### M2.5: Finalize Python Prototype
 
-### Workspace Layer
+Review all Python source code and minimize where possible.
 
-`5` activates the workspace layer.
+Prepare for C port.
 
-`6` tells my window manager that the next window will be opened to the right of
-the current focused window. `2` does the same, execpt it will open below the
-current window.
+### M3: C Port
 
-Pressing `5` makes the current window fullscreen.
+Port the application to C.
 
-### Snippits Layer
+Test while progressing through next milestones.
 
-`/` opens up the snippits layer. These are terminal commands.
+### M4: Commercialization
 
-`4` goes to `~/code/MacroPad`.
+* [ ] Define paywalled features and limits of free version
+* [ ] Determine price
 
-`.` navigates to the `~/.config` directory. It can also be held, after which
-pressing `5` will run `vim ~/.config/i3/config`.
+### M5: Web Resources
 
-### Common Inputs
+* [ ] Research suitable web host
+* [ ] Create website
+* [ ] Find selling platform
 
-Here are commonly-used inputs:
+### M6: Outreach Resources
 
-#### 3-Window Layout
+* [ ] Logo creation
+* [ ] Produce a video demo of macropad.
 
-`1->4 56 1->4 52 1->4`
-
-## Usage Patterns
-### ModKey / Run on Release
-
-```
-KEY_KP2
-	ON_PRESS LAYER terminal
-
-LAYER terminal
-	KEY_KP2
-		ON_RELEASE RUN st
-
-	KEY_KP3
-		ON_PRESS RUN cd ~/code && st
-```
-
-This allows KP2 to work as a modkey and a macro button.
-
-Pressing and releasing it spawns a terminal.
-
-Holding it and pressing KP3 opens a terminal in the mentioned directory.
-
+### M7: Sell
