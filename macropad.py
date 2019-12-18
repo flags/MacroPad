@@ -22,12 +22,16 @@ KEY_MAP = {}
 KEY_CALLBACK_MAP = {}
 KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_RELEASE": KEY_UP,
-        "ON_HOLD": KEY_HOLD}
+        "ON_HOLD": KEY_HOLD,
+        "BIND": -1}
 
 # global
 CURRENT_LAYER = "default"
+LAYER_LOCK = False
+LOCKED_PLAYER = "default"
 LAYER_TIMEOUT_MAX = 1.5
 LAST_KEY_EVENT_TIME = 0
+UI = None
 
 
 def detectDevice():
@@ -178,6 +182,22 @@ def loadConfig(filePath):
 
                 return
 
+            # if we're just rebinding the key, check out early
+            if event.lower() == "bind":
+                binds = bind.split('+')
+                assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                        lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
+                            keyCode, state))
+                assignKey(selectedLayer, selectedKey, KEY_HOLD,
+                        lambda keyCode=binds, state=KEY_HOLD: keyInput("key",
+                            keyCode, state))
+                assignKey(selectedLayer, selectedKey, KEY_UP,
+                        lambda keyCode=binds, state=KEY_UP: keyInput("key",
+                            keyCode, state))
+                bindCount += 1
+
+                continue
+
             # bind parsing:
             #   split the string and check if the first argument is an action we
             #   support.
@@ -212,6 +232,13 @@ def loadConfig(filePath):
                         lambda layer=layer: setLayer(layer))
 
                 bindCount += 1
+            elif action == "modelayer":
+                layer = ' '.join(bindArgs[1:])
+
+                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
+                        lambda layer=layer: setLayer(layer, lock=True))
+
+                bindCount += 1
 
     configFile.close()
 
@@ -243,7 +270,12 @@ def handleKey(event, debug=False):
     # layer.
     # this prevents lingering inputs from affecting future inputs.
     if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
-        setLayer("default")
+        if LAYER_LOCK:
+            setLayer(LOCKED_LAYER)
+
+            print("Returning to locked layer: %s" % LOCKED_LAYER)
+        else:
+            setLayer("default")
 
     if debug:
         if KEY_MAP[event.keycode]["state"] == KEY_DOWN:
@@ -273,10 +305,23 @@ def assignKey(layer, keycode, state, callback):
 
     KEY_CALLBACK_MAP[layer][keycode][state] = callback
 
-def setLayer(layer):
+def showLayer():
+    pass
+    # print('\x1b[2J') 
+
+def setLayer(layer, lock=False):
     global CURRENT_LAYER
+    global LAYER_LOCK, LOCKED_LAYER
 
     CURRENT_LAYER = layer
+
+    if lock:
+        LOCKED_LAYER = layer
+        print("Locked layer: %s" % LOCKED_LAYER)
+        LAYER_LOCK = lock
+    elif layer == "default":
+        LAYER_LOCK = False
+        LOCKED_LAYER = layer
 
     print("debug: layer = %s" % layer)
 
@@ -286,8 +331,9 @@ def setLayer(layer):
 
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
-def runCommand(command):
-    setLayer("default")
+def runCommand(command, event=None):
+    if not LAYER_LOCK:
+        setLayer("default")
 
     # do the UNIX double-fork magic, see Stevens' "Advanced 
     # Programming in the UNIX Environment" for details (ISBN 0201563177)
@@ -321,17 +367,26 @@ def runCommand(command):
     # all done
     os._exit(os.EX_OK)
 
-def keyInput(event, keycode):
-    with evdev.uinput.UInput() as ui:
-        ui.write(evdev.ecodes.EV_KEY, evdev.ecodes.ecodes[keycode], 1)
-        ui.syn()
+def keyInput(event, keycodes, state):
+    for keycode in keycodes:
+        UI.write(evdev.ecodes.EV_KEY, evdev.ecodes.ecodes[keycode], state)
+
+    UI.syn()
 
 def main(devicePath):
+    global UI
+
     # open the device via evdev
     device = evdev.InputDevice(devicePath)
 
+    UI = evdev.uinput.UInput()
     # start consuming all inputs from the device
-    device.grab()
+    try:
+        device.grab()
+    except Exception as e:
+        print(e)
+
+        return
 
     # main loop
     #   listen to inputs and react to them.
