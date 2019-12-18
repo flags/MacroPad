@@ -271,10 +271,11 @@ def handleKey(event, debug=False):
     # this prevents lingering inputs from affecting future inputs.
     if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
         if LAYER_LOCK:
-            setLayer(LOCKED_LAYER)
+            if not CURRENT_LAYER == LOCKED_LAYER:
+                setLayer(LOCKED_LAYER)
 
-            print("Returning to locked layer: %s" % LOCKED_LAYER)
-        else:
+                print("Returning to locked layer: %s" % LOCKED_LAYER)
+        elif not CURRENT_LAYER == "default":
             setLayer("default")
 
     if debug:
@@ -306,8 +307,17 @@ def assignKey(layer, keycode, state, callback):
     KEY_CALLBACK_MAP[layer][keycode][state] = callback
 
 def showLayer():
-    pass
+    subprocess.Popen("notify-send -t %i \"%s\"" % (LAYER_TIMEOUT_MAX * 1000,
+        CURRENT_LAYER), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # print('\x1b[2J') 
+
+    # keys = list(KEY_CALLBACK_MAP[CURRENT_LAYER].keys())
+    # keys.sort()
+
+    # print(CURRENT_LAYER + '\n')
+
+    # for key in keys:
+        # print("%s - %s" % (key, KEY_CALLBACK_MAP[CURRENT_LAYER][key]))
 
 def setLayer(layer, lock=False):
     global CURRENT_LAYER
@@ -326,6 +336,8 @@ def setLayer(layer, lock=False):
     print("debug: layer = %s" % layer)
 
     # experimenting with osd for command readout
+    showLayer()
+
     # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
         # showKey(str(keycode), "duh")
 

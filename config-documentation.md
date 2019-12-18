@@ -1,5 +1,71 @@
-# MacroPad Planning
-## Creating a Layout
+# MacroPad Configuration
+## Introduction
+
+This document will teach you everything you need to know about building your
+ideal MacroPad configuration file.
+
+## Concepts
+### The Single Action Approach
+
+MacroPad encourages a "single action" approach to building macros, i.e., instead
+of assigning a single button to open a text editor, spawn a terminal, then
+navigate to a certain directory in that terminal, you should instead break these
+actions down into individual macros. By doing this, you'll create "building
+blocks" for crafting macros on the fly.
+
+### Layers
+
+If you press `q` on your keyboard, it will print a `q`. If you hold `Shift` and
+hit `q`, it will print a `Q`. This is better than having both a key for `q` and
+`Q`. MacroPad does something similar to help build more complex sets of macros
+with fewer keys.
+
+Unless specified, all macros are entered into the "default" layer. This means if
+`1` is bound to open my text editor, pressing `1` will open my text editor.
+Simple enough. It may not be immediately obvious why you would ever need
+anything other than the default layer, so let's use some examples:
+
+* Open a text editor and edit a specific file
+* Open a specific website in your browser
+* Navigate to a certain directory in your terminal
+
+All of these ask the question of "which?": Which file? Which website? Which
+directory?
+
+#### Smarter Program Launching
+
+Instead of just launching a text editor, `1` can open up a layer of macros
+dedicated to altering the launch parameters of the text editor.
+
+When `1` is held, the `2` and `3` keys will become bound to `open
+daily_planner.txt` and `open monthly_planner.txt`. Not pressing any of these and
+simply releasing the `1` key will launch the editor with an empty document.
+
+#### Timed Layers
+
+The previous example detailed holding a key to reveal a layer. However, it's
+also possible to switch to a layer and have it remain after releasing the button
+that triggered it. This is a timed layer.
+
+In this example, the `/` key activates a layer containing a number of text
+snippits that I commonly use while programming. Since there is no command bound
+to the release of the `/` key, MacroPad gives the user around 2 seconds to enter
+a followup keypress on the layer before returning to the default one.
+
+After hitting my macro for printing out a long function name (`/` followed by
+`7`), MacroPad automatically switches back to the default layer and waits for
+input.
+
+#### Mode Layers
+
+Triggering a macro within a layer automatically sends control back to the
+default layer.
+
+However, the default layer MacroPad returns to can be defined by establishing a
+"mode layer." This is useful if you'd like to set up keybinds for gaming,
+browsing the web, or using a particular program (image editor, etc.)
+
+## Creating a Layout (by Example)
 
 The best piece of advice I can give is to define your goals. This may seem
 obvious, but a bit of planning can avoid massive reconfiguring and unlearning
