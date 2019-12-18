@@ -323,6 +323,7 @@ def setLayer(layer, lock=False):
     global CURRENT_LAYER
     global LAYER_LOCK, LOCKED_LAYER
 
+    lastLayer = CURRENT_LAYER
     CURRENT_LAYER = layer
 
     if lock:
@@ -336,7 +337,8 @@ def setLayer(layer, lock=False):
     print("debug: layer = %s" % layer)
 
     # experimenting with osd for command readout
-    showLayer()
+    if not lastLayer == CURRENT_LAYER:
+        showLayer()
 
     # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
         # showKey(str(keycode), "duh")
