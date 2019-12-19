@@ -29,6 +29,7 @@ LAYER_LOCK = False
 LOCKED_PLAYER = "default"
 LAYER_TIMEOUT_MAX = 1.5
 LAST_KEY_EVENT_TIME = 0
+HOT_LAYER = False
 UI = None
 
 
@@ -218,6 +219,12 @@ def loadConfig(filePath):
                         lambda layer=value: setLayer(layer, lock=True))
 
                 bindCount += 1
+            elif key == "hotlayer":
+                assignKey(selectedLayer, selectedKey,
+                        KEYEVENT_REMAP[parsing.upper()],
+                        lambda layer=value: setLayer(layer, hot=True))
+
+                bindCount += 1
             elif key == "run":
                 assignKey(selectedLayer, selectedKey,
                         KEYEVENT_REMAP[parsing.upper()],
@@ -382,6 +389,7 @@ def showKey(key, command):
 
 def handleKey(event, debug=False):
     global LAST_KEY_EVENT_TIME
+    global HOT_LAYER
 
     now = time.time()
     last_hit = now
@@ -399,6 +407,10 @@ def handleKey(event, debug=False):
     # layer.
     # this prevents lingering inputs from affecting future inputs.
     if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
+        if HOT_LAYER:
+            print("Hot layer reset!")
+
+        HOT_LAYER = False
         if LAYER_LOCK:
             if not CURRENT_LAYER == LOCKED_LAYER:
                 setLayer(LOCKED_LAYER)
@@ -449,9 +461,9 @@ def showLayer():
     # for key in keys:
         # print("%s - %s" % (key, KEY_CALLBACK_MAP[CURRENT_LAYER][key]))
 
-def setLayer(layer, lock=False):
+def setLayer(layer, lock=False, hot=False):
     global CURRENT_LAYER
-    global LAYER_LOCK, LOCKED_LAYER
+    global LAYER_LOCK, LOCKED_LAYER, HOT_LAYER
 
     lastLayer = CURRENT_LAYER
     CURRENT_LAYER = layer
@@ -463,6 +475,10 @@ def setLayer(layer, lock=False):
     elif layer == "default":
         LAYER_LOCK = False
         LOCKED_LAYER = layer
+
+    # or just assign hot_layer to hot value?
+    if hot:
+        HOT_LAYER = True
 
     print("debug: layer = %s" % layer)
 
@@ -476,7 +492,7 @@ def setLayer(layer, lock=False):
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
 def runCommand(command, event=None):
-    if not LAYER_LOCK:
+    if not (LAYER_LOCK or HOT_LAYER):
         setLayer("default")
 
     # do the UNIX double-fork magic, see Stevens' "Advanced 
