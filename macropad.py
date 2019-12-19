@@ -6,7 +6,6 @@ import time
 import sys
 import os
 
-
 DEBUG = False
 
 # enums
@@ -22,8 +21,7 @@ KEY_MAP = {}
 KEY_CALLBACK_MAP = {}
 KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_RELEASE": KEY_UP,
-        "ON_HOLD": KEY_HOLD,
-        "BIND": -1}
+        "ON_HOLD": KEY_HOLD}
 
 # global
 CURRENT_LAYER = "default"
@@ -94,7 +92,6 @@ def detectDevice():
         return
 
     print("\nDevice found: %s" % bestDevice.name)
-
     print("\nMacroPad will now generate a config file for this device.")
 
     fileName = input("Enter file name: ")
@@ -119,9 +116,141 @@ def loadConfig(filePath):
     configFile = open(filePath, 'r')
     selectedDevice = None
     selectedKey = None
+    selectedEvent = None
     selectedLayer = "default"
+    parseStack = []
+    # blockNum = 0
     lineNum = 0
     bindCount = 0
+
+    for line in configFile.readlines():
+        lineNum += 1
+        line = line.lstrip().rstrip() # remove newlines
+
+        if not len(line):
+            continue
+
+        if line.startswith('#'):
+            continue
+
+        if line.endswith('{'):
+            keyword = line.split('{')[0].rstrip().lower()
+
+            print("Parsing: %s" % keyword)
+
+            if keyword.startswith("key_"):
+                selectedKey = keyword.upper()
+
+                print("Selected key: %s" % selectedKey)
+
+                parseStack.append(keyword)
+            elif keyword.startswith("layer"):
+                selectedLayer = keyword.split(' ')[1]
+
+                print("Selected layer: %s" % selectedLayer)
+
+                parseStack.append("layer")
+            else:
+                parseStack.append(keyword)
+                
+            # elif keyword.upper() in 
+            # if keyword == "device":
+                # parseStack.append("device")
+            # elif keyword == "binds":
+                # if selectedKey == None:
+                    # selectedKey = keyword
+
+            # blockNum += 1
+
+            continue
+
+        parsing = parseStack[len(parseStack) - 1]
+
+        if line.endswith('}'):
+            parseStack.pop()
+
+            if parsing == "binds":
+                pass
+            elif parsing == "device":
+                pass
+            elif parsing == "layer":
+                selectedLayer = "default"
+
+            continue
+
+        if not parsing:
+            print("Not parsing: %s" % line)
+
+            continue
+
+        if not ' ' in line:
+            continue
+
+        key, _, value = line.partition(' ')
+        key = key.lower()
+
+        if parsing == "device":
+            if key == "path":
+                selectedDevice = value
+
+            continue
+        elif parsing.upper() in KEYEVENT_REMAP:
+            if key == "type":
+                assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                        lambda text=value, state=KEY_DOWN: type(text))
+            elif key == "key":
+                assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                        lambda keyCode=[value], state=KEY_DOWN: keyInput("key",
+                            keyCode, state))
+                assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                        lambda keyCode=[value], state=KEY_UP: keyInput("key",
+                            keyCode, state))
+                bindCount += 1
+            elif key == "layer":
+                assignKey(selectedLayer, selectedKey,
+                        KEYEVENT_REMAP[parsing.upper()],
+                        lambda layer=value: setLayer(layer))
+
+                bindCount += 1
+            elif key == "modelayer":
+                assignKey(selectedLayer, selectedKey,
+                        KEYEVENT_REMAP[parsing.upper()],
+                        lambda layer=value: setLayer(layer, lock=True))
+
+                bindCount += 1
+            elif key == "run":
+                assignKey(selectedLayer, selectedKey,
+                        KEYEVENT_REMAP[parsing.upper()],
+                        lambda value=value: runCommand(value))
+
+                bindCount += 1
+            else:
+                print("Unknown: line %i:" % lineNum, key, value)
+                return
+        elif key == "bind":
+            binds = value.split('+')
+            assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                    lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
+                        keyCode, state))
+            assignKey(selectedLayer, selectedKey, KEY_HOLD,
+                    lambda keyCode=binds, state=KEY_HOLD: keyInput("key",
+                        keyCode, state))
+            assignKey(selectedLayer, selectedKey, KEY_UP,
+                    lambda keyCode=binds, state=KEY_UP: keyInput("key",
+                        keyCode, state))
+            bindCount += 1
+        else:
+            print("Unknown parsing layer on line %i: %s - %s" % (lineNum, key, value))
+            return
+
+    configFile.close()
+
+    if not DEBUG:
+        print("Loaded %i bind%s." % (bindCount, 's' * (bindCount != 1)))
+
+    main(selectedDevice)
+
+    return
 
     for line in configFile.readlines():
         lineNum += 1
@@ -288,8 +417,9 @@ def handleKey(event, debug=False):
     else:
         if event.keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
             if event.keystate in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode]:
-                # pull the callback out of the dictionary and call it
-                KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode][event.keystate]()
+                # pull callbacks out of the dictionary and call them
+                for callback in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode][event.keystate]:
+                    callback()
 
                 # record the time at which the event was executed. see above
                 LAST_KEY_EVENT_TIME = now
@@ -298,13 +428,13 @@ def assignKey(layer, keycode, state, callback):
     if not layer in KEY_CALLBACK_MAP:
         KEY_CALLBACK_MAP[layer] = {}
 
-    if keycode in KEY_CALLBACK_MAP[layer]:
-        if state in KEY_CALLBACK_MAP[layer][keycode]:
-            raise Exception("Key '%s' already bound for state '%s' on layer '%s'" % (keycode, state, layer))
-    else:
+    if not keycode in KEY_CALLBACK_MAP[layer]:
         KEY_CALLBACK_MAP[layer][keycode] = {}
 
-    KEY_CALLBACK_MAP[layer][keycode][state] = callback
+    if not state in KEY_CALLBACK_MAP[layer][keycode]:
+        KEY_CALLBACK_MAP[layer][keycode][state] = []
+
+    KEY_CALLBACK_MAP[layer][keycode][state].append(callback)
 
 def showLayer():
     subprocess.Popen("notify-send -t %i \"%s\"" % (LAYER_TIMEOUT_MAX * 1000,
@@ -386,6 +516,10 @@ def keyInput(event, keycodes, state):
         UI.write(evdev.ecodes.EV_KEY, evdev.ecodes.ecodes[keycode], state)
 
     UI.syn()
+
+def type(text):
+    subprocess.call("xdotool type %s" % text, shell=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
 def main(devicePath):
     global UI
