@@ -137,31 +137,22 @@ def loadConfig(filePath):
         if line.endswith('{'):
             keyword = line.split('{')[0].rstrip().lower()
 
-            print("Parsing: %s" % keyword)
+            # print("Parsing: %s" % keyword)
 
             if keyword.startswith("key_"):
                 selectedKey = keyword.upper()
 
-                print("Selected key: %s" % selectedKey)
+                # print("Selected key: %s" % selectedKey)
 
                 parseStack.append(keyword)
             elif keyword.startswith("layer"):
                 selectedLayer = keyword.split(' ')[1]
 
-                print("Selected layer: %s" % selectedLayer)
+                # print("Selected layer: %s" % selectedLayer)
 
                 parseStack.append("layer")
             else:
                 parseStack.append(keyword)
-                
-            # elif keyword.upper() in 
-            # if keyword == "device":
-                # parseStack.append("device")
-            # elif keyword == "binds":
-                # if selectedKey == None:
-                    # selectedKey = keyword
-
-            # blockNum += 1
 
             continue
 
@@ -257,132 +248,6 @@ def loadConfig(filePath):
 
     main(selectedDevice)
 
-    return
-
-    for line in configFile.readlines():
-        lineNum += 1
-        line = line.rstrip() # remove newlines
-
-        # obey formatting rules:
-        #   if we're currently configuring a key and the line doesn't start with
-        #   either a tab or a space, assume we're done with the current key and
-        #   are moving to a new one.
-        #   if the above criteria is met a second time, we reset the layer.
-        if not len(line) or not (line[0] in [' ', '\t']):
-            if selectedKey:
-                selectedKey = None
-            elif not selectedLayer == "default":
-                selectedLayer = "default"
-
-        # strip all jargon from the front of the string
-        line = line.lstrip()
-
-        if not len(line):
-            continue
-
-        # let the user comment their config
-        if line.startswith('#'):
-            continue
-
-        if line.lower().startswith("layer"):
-            layerInfo = line.split(' ')
-
-            if not len(layerInfo) >= 2:
-                print("Config error on line %i:\n\tMissing layer name" %
-                        (lineNum))
-
-                return
-
-            selectedLayer = ' '.join(layerInfo[1:])
-
-            continue
-        
-        # if we havn't gotten the device yet, assume the first line is the path
-        # to it.
-        if not selectedDevice:
-            selectedDevice = line
-
-            if DEBUG:
-                break
-        elif not selectedKey:
-            # define the key we're configuring
-            selectedKey = line
-        else:
-            # get the event and the bind
-            event, _, bind = line.partition(' ')
-
-            # if the event isn't one we support, tell the user
-            if not event in KEYEVENT_REMAP:
-                print("Config error on line %i:\n\tUnknown event for key '%s': %s" %
-                        (lineNum, selectedKey, event))
-
-                return
-
-            # if we're just rebinding the key, check out early
-            if event.lower() == "bind":
-                binds = bind.split('+')
-                assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                        lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
-                            keyCode, state))
-                assignKey(selectedLayer, selectedKey, KEY_HOLD,
-                        lambda keyCode=binds, state=KEY_HOLD: keyInput("key",
-                            keyCode, state))
-                assignKey(selectedLayer, selectedKey, KEY_UP,
-                        lambda keyCode=binds, state=KEY_UP: keyInput("key",
-                            keyCode, state))
-                bindCount += 1
-
-                continue
-
-            # bind parsing:
-            #   split the string and check if the first argument is an action we
-            #   support.
-            bindArgs = bind.split(' ')
-            action = bindArgs[0].lower()
-
-            if action == "key":
-                #TODO: Check for keyup/keydown
-                keyCode = bindArgs[1]
-
-                # make sure the keycode is valid
-                if not keyCode in KEY_CODES:
-                    print("Config error on line %i:\n\tUnknown keycode for key '%s': %s" %
-                            (lineNum, selectedKey, keyCode))
-                    
-                    return
-
-                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
-                        lambda keyCode=keyCode: keyInput("key", keyCode))
-
-                bindCount += 1
-            elif action == "run":
-                command = ' '.join(bindArgs[1:])
-                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
-                        lambda command=command: runCommand(command))
-
-                bindCount += 1
-            elif action == "layer":
-                layer = ' '.join(bindArgs[1:])
-
-                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
-                        lambda layer=layer: setLayer(layer))
-
-                bindCount += 1
-            elif action == "modelayer":
-                layer = ' '.join(bindArgs[1:])
-
-                assignKey(selectedLayer, selectedKey, KEYEVENT_REMAP[event],
-                        lambda layer=layer: setLayer(layer, lock=True))
-
-                bindCount += 1
-
-    configFile.close()
-
-    if not DEBUG:
-        print("Loaded %i bind%s." % (bindCount, 's' * (bindCount != 1)))
-
-    main(selectedDevice)
-
 def showKey(key, command):
     subprocess.Popen("notify-send -t %i \"%s - %s\"" % (LAYER_TIMEOUT_MAX * 1000, key, command),
             shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -429,12 +294,19 @@ def handleKey(event, debug=False):
     else:
         if event.keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
             if event.keystate in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode]:
+                resetLayer = False
+
                 # pull callbacks out of the dictionary and call them
                 for callback in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode][event.keystate]:
-                    callback()
+                    if callback():
+                        resetLayer = True
 
                 # record the time at which the event was executed. see above
                 LAST_KEY_EVENT_TIME = now
+
+                if resetLayer:
+                    if not (LAYER_LOCK or HOT_LAYER):
+                        setLayer("default")
 
 def assignKey(layer, keycode, state, callback):
     if not layer in KEY_CALLBACK_MAP:
@@ -492,9 +364,6 @@ def setLayer(layer, lock=False, hot=False):
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
 def runCommand(command, event=None):
-    if not (LAYER_LOCK or HOT_LAYER):
-        setLayer("default")
-
     # do the UNIX double-fork magic, see Stevens' "Advanced 
     # Programming in the UNIX Environment" for details (ISBN 0201563177)
     try: 
@@ -527,15 +396,21 @@ def runCommand(command, event=None):
     # all done
     os._exit(os.EX_OK)
 
+    return 1
+
 def keyInput(event, keycodes, state):
     for keycode in keycodes:
         UI.write(evdev.ecodes.EV_KEY, evdev.ecodes.ecodes[keycode], state)
 
     UI.syn()
 
+    return 1
+
 def type(text):
     subprocess.call("xdotool type %s" % text, shell=True, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+
+    return 1
 
 def main(devicePath):
     global UI
