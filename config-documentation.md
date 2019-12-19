@@ -65,6 +65,13 @@ However, the default layer MacroPad returns to can be defined by establishing a
 "mode layer." This is useful if you'd like to set up keybinds for gaming,
 browsing the web, or using a particular program (image editor, etc.)
 
+#### Hot Layers
+
+This layer type is similar to a timed layer, except MacroPad doesn't return to
+the default layer after a keypress, allowing multiple macros to be fired on the
+same layer in succession. MacroPad resets to the default layer roughly 2 seconds
+after the last keypress is made.
+
 ## Creating a Layout (by Example)
 
 The best piece of advice I can give is to define your goals. This may seem
@@ -76,6 +83,7 @@ Here the goals for my main macropad:
 * Workspace organization (i.e., window management.)
 * Quick launching of dev tools
 * "Bash snippits" for quick terminal use
+* A mode for browsing the web
 
 The two main layers will be `terminal` and `workspace`.
 
@@ -118,25 +126,4 @@ Here are commonly-used inputs:
 #### 3-Window Layout
 
 `1->4 56 1->4 52 1->4`
-
-## Usage Patterns
-### ModKey / Run on Release
-
-```
-KEY_KP2
-	ON_PRESS LAYER terminal
-
-LAYER terminal
-	KEY_KP2
-		ON_RELEASE RUN st
-
-	KEY_KP3
-		ON_PRESS RUN cd ~/code && st
-```
-
-This allows KP2 to work as a modkey and a macro button.
-
-Pressing and releasing it spawns a terminal.
-
-Holding it and pressing KP3 opens a terminal in the mentioned directory.
 
