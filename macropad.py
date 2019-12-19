@@ -361,6 +361,8 @@ def setLayer(layer, lock=False, hot=False):
     # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
         # showKey(str(keycode), "duh")
 
+    return 0
+
 # the following function wasn't written by me.
 # it can found in full at: https://stackoverflow.com/a/6011298
 def runCommand(command, event=None):
