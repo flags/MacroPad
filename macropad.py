@@ -51,7 +51,7 @@ def detectDevice():
     print("MacroPad will now help you select the device you want to config.")
     print("\n1) Press ENTER")
     print("2) Hold down a key on the device you want to select")
-    print("3) Make sure no other device is in use (mouse, etc.")
+    print("3) Make sure no other device is in use (mouse, etc.)")
     print("4) De-focus this window!")
     print("\nPress ENTER to begin.")
 
@@ -69,8 +69,10 @@ def detectDevice():
         for devicePath in devices:
             try:
                 device = evdev.device.InputDevice(devicePath)
-            except:
-                pass
+            except Exception as e:
+                print("Could not open device: %s" % e)
+
+                continue
 
             try:
                 eventCount = 0
