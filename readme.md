@@ -13,7 +13,7 @@ mapping of the device on the fly. See `Layering` below.
 
 ## Use
 
-First, ensure you have the `evdev` Python module installed via `pip` or your
+First, ensure you have the `pytho-evdev` module installed via `pip` or your
 distro's package manager. In Arch Linux, use `python-evdev`.
 
 Clone this repo to a directory of your choosing, then run:

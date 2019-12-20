@@ -193,11 +193,12 @@ def loadConfig(filePath):
                 assignKey(selectedLayer, selectedKey, KEY_DOWN,
                         lambda text=value, state=KEY_DOWN: type(text))
             elif key == "key":
+                binds = value.split('+')
                 assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                        lambda keyCode=[value], state=KEY_DOWN: keyInput("key",
+                        lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
                             keyCode, state))
                 assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                        lambda keyCode=[value], state=KEY_UP: keyInput("key",
+                        lambda keyCode=binds, state=KEY_UP: keyInput("key",
                             keyCode, state))
                 bindCount += 1
             elif key == "layer":
