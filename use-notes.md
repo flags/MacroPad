@@ -2,6 +2,16 @@
 
 * open browser to current clipboard (`pp` in qutebrowser)
 
+### thu dec 19 2019
+
+Tested briefly in Ubuntu via work laptop. Added a single macro and will be
+adding more as I see fit.
+
+Need more test cases. Also need to revisit how stuff like `vim` is launched.
+
+Noticing that it's difficult to visualize a config after not using parts of it
+for a while.
+
 ### wed dec 18 2019
 
 #### Update 1

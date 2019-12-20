@@ -15,6 +15,8 @@ blocks" for crafting macros on the fly.
 
 ### Layers
 
+Here's an obvious example:
+
 If you press `q` on your keyboard, it will print a `q`. If you hold `Shift` and
 hit `q`, it will print a `Q`. This is better than having both a key for `q` and
 `Q`. MacroPad does something similar to help build more complex sets of macros
@@ -56,6 +58,13 @@ After hitting my macro for printing out a long function name (`/` followed by
 `7`), MacroPad automatically switches back to the default layer and waits for
 input.
 
+#### Hot Layers
+
+This layer type is similar to a timed layer, except MacroPad doesn't return to
+the default layer after a keypress, allowing multiple macros to be fired on the
+same layer in succession. MacroPad resets to the default layer roughly 2 seconds
+after the last keypress is made.
+
 #### Mode Layers
 
 Triggering a macro within a layer automatically sends control back to the
@@ -65,12 +74,13 @@ However, the default layer MacroPad returns to can be defined by establishing a
 "mode layer." This is useful if you'd like to set up keybinds for gaming,
 browsing the web, or using a particular program (image editor, etc.)
 
-#### Hot Layers
+`qutebrowser` is a web browser that has the majority of its controls bound to
+the keyboard. This includes changing tabs, selecting links, and scrolling, all
+good targets for MacroPad.
 
-This layer type is similar to a timed layer, except MacroPad doesn't return to
-the default layer after a keypress, allowing multiple macros to be fired on the
-same layer in succession. MacroPad resets to the default layer roughly 2 seconds
-after the last keypress is made.
+In my personal MacroPad config, I have a `browser` mode layer that sets up the
+aforementioned functions, then provides timed layers and hot layers for things
+like link selection and choosing bookmarks.
 
 ## Creating a Layout (by Example)
 
