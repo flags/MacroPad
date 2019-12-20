@@ -372,7 +372,7 @@ def runCommand(command, event=None):
         pid = os.fork() 
         if pid > 0:
             # parent process, return and keep running
-            return
+            return 1
     except Exception as e:
         print(e)
 
