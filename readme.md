@@ -8,12 +8,11 @@ MacroPad intercepts keycodes on a per-device basis, meaning multiple keyboards
 can be plugged in and configured independently.
 
 MacroPad's most powerful feature is layering, which allows keys to change the
-mapping of the device on the fly. See `Layering` below.
+mapping of the device on the fly.
 
+## Setup
 
-## Use
-
-First, ensure you have the `pytho-evdev` module installed via `pip` or your
+First, ensure you have the `python-evdev` module installed via `pip` or your
 distro's package manager. In Arch Linux, use `python-evdev`.
 
 Clone this repo to a directory of your choosing, then run:
@@ -23,7 +22,12 @@ Clone this repo to a directory of your choosing, then run:
 Follow the on-screen instructions. Note the location of the configuration file,
 then open it in the text editor of your choosing.
 
-### Configuration Workflow
+### Learning / Documentation
+
+Please see [advanced usage](config-documentation.md) after reading the section
+below.
+
+### Configuration Workflow (Basic)
 
 Open up a terminal alongside your text editor and run:
 
@@ -90,43 +94,6 @@ Save the config file. Now run:
 
 `./macropad /path/to/config/file`
 
-## Layering
+# Example Config
 
-Layers are MacroPad's way to managing multiple different binds per key. It works
-as follows:
-
-```
-Numpad 1: switch to "web" layer
-Numpad 2: switch to "terminal" layer
-
-Layer: web
-	Numpad 1: open web browser to github.com
-	Numpad 2: open web browser to geekhack.org
-
-Layer: terminal
-	Numpad 1: open terminal to code directory
-	Numper 2: open terminal to site directory
-```
-
-To open my web brower to geekhack.org, I'd type `12` into the configred keypad.
-A similar keypress is performed for opening a terminal to my code directory:
-`21`.
-
-Layers are defined in the `BINDS` section of the config file:
-
-```
-BINDS {
-	KEY_KP1 {
-		ON_PRESS {
-			LAYER test-layer
-		}
-	}
-
-	LAYER test-layer {
-		KEY_KP1 {
-			ON_PRESS {
-				RUN foo bar
-			}
-		}
-	}
-}
+I've attached my personal config file to this repo: [keypad.conf](keypad.conf).
