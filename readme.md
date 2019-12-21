@@ -48,20 +48,43 @@ pressed. This can be ignored.
 To configure a key, follow this format:
 
 ```
-<KEYCODE>
-	ON_PRESS <BIND>
-	ON_RELEASE <BIND>
-	ON_HOLD <BIND>
+
+BINDS {
+	<KEYCODE> {
+		.. options ..
+
+		<EVENT> {
+			.. commands ..
+		}
+	}
+}
 ```
 
-Where `bind` is:
+Formatting and indents matter!
+
+Supported events are:
 
 ```
-RUN /path/to/script
+ON_PRESS
+ON_RELEASE
+```
+
+Where `commands` is:
+
+```
+RUN <program/script/etc>
+TYPE <string>
 KEY <keycode>
-KEY UP/DOWN <keycode> #for specific actions
 LAYER <layer>
+HOTLAYER <layer>
+MODELAYER <layer>
 ```
+
+`options` only supports one command at the time of writing:
+
+`BIND <keycode>`
+
+(this is a shortcut to doing `ONPRESS [...] KEY <keycode>`)
 
 Save the config file. Now run:
 
