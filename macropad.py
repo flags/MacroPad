@@ -7,6 +7,7 @@ import sys
 import os
 
 DEBUG = False
+ASSIST_MODE = False
 
 # enums
 KEY_UP = 0
@@ -22,6 +23,7 @@ KEY_CALLBACK_MAP = {}
 KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_RELEASE": KEY_UP,
         "ON_HOLD": KEY_HOLD}
+COMMENT_MAP = {}
 
 # global
 CURRENT_LAYER = "default"
@@ -242,6 +244,8 @@ def loadConfig(filePath):
                     lambda keyCode=binds, state=KEY_UP: keyInput("key",
                         keyCode, state))
             bindCount += 1
+        elif key == "comment":
+            assignComment(selectedLayer, selectedKey, value)
         else:
             print("Unknown parsing layer on line %i: %s - %s" % (lineNum, key, value))
             return
@@ -313,6 +317,17 @@ def handleKey(event, debug=False):
                     if not (LAYER_LOCK or HOT_LAYER):
                         setLayer("default")
 
+def assignComment(layer, keycode, value):
+    if not layer in COMMENT_MAP:
+        COMMENT_MAP[layer] = {}
+
+    if not keycode in COMMENT_MAP[layer]:
+        COMMENT_MAP[layer][keycode] = value
+
+        return
+
+    print("WARNING: already assigned comment to %s - %s" % (layer, keycode))
+
 def assignKey(layer, keycode, state, callback):
     if not layer in KEY_CALLBACK_MAP:
         KEY_CALLBACK_MAP[layer] = {}
@@ -325,18 +340,44 @@ def assignKey(layer, keycode, state, callback):
 
     KEY_CALLBACK_MAP[layer][keycode][state].append(callback)
 
+# DEVICE_LAYOUT = []
+# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
+# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
+# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
+
 def showLayer():
     subprocess.Popen("notify-send -t %i \"%s\"" % (LAYER_TIMEOUT_MAX * 1000,
         CURRENT_LAYER), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # print('\x1b[2J') 
 
-    # keys = list(KEY_CALLBACK_MAP[CURRENT_LAYER].keys())
-    # keys.sort()
+    # for row in DEVICE_LAYOUT:
+        # print("-------" * 4)
+        # for key in row:
+            # print("|  %s  |" % key, end='')
+        # print()
 
-    # print(CURRENT_LAYER + '\n')
+    # print("-------" * 4)
+    # clear terminal
+    print('\x1b[2J') 
+    print(CURRENT_LAYER + '\n')
 
-    # for key in keys:
-        # print("%s - %s" % (key, KEY_CALLBACK_MAP[CURRENT_LAYER][key]))
+    if not CURRENT_LAYER in COMMENT_MAP:
+        print("No comments for this layer.")
+        return
+
+    keys = list(COMMENT_MAP[CURRENT_LAYER].keys())
+    keys.sort()
+
+    # translate = {KEY_DOWN: "PRESS",
+            # KEY_UP: "RELEASE"}
+
+    for key in keys:
+        print("[ %s ] %s" % (key.split("KEY_")[1], COMMENT_MAP[CURRENT_LAYER][key]))
+
+        # for event in KEY_CALLBACK_MAP[CURRENT_LAYER][key]:
+            # if not event in translate:
+                # continue
+
+        # print("\t%s" % (COMMENT_MAP[CURRENT_LAYER][key]))
 
 def setLayer(layer, lock=False, hot=False):
     global CURRENT_LAYER
@@ -347,7 +388,7 @@ def setLayer(layer, lock=False, hot=False):
 
     if lock:
         LOCKED_LAYER = layer
-        print("Locked layer: %s" % LOCKED_LAYER)
+        # print("Locked layer: %s" % LOCKED_LAYER)
         LAYER_LOCK = lock
     elif layer == "default":
         LAYER_LOCK = False
@@ -357,11 +398,12 @@ def setLayer(layer, lock=False, hot=False):
     if hot:
         HOT_LAYER = True
 
-    print("debug: layer = %s" % layer)
+    # print("debug: layer = %s" % layer)
 
     # experimenting with osd for command readout
-    if not lastLayer == CURRENT_LAYER:
-        showLayer()
+    if ASSIST_MODE:
+        if not lastLayer == CURRENT_LAYER:
+            showLayer()
 
     # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
         # showKey(str(keycode), "duh")
@@ -461,9 +503,16 @@ def usage():
     print("\t<file>\t\t - run MacroPad with configuration file")
     print("\t--detect <file>\t - select device and output default config file")
     print("\t--show <file>\t - print all key inputs to the terminal (will not fire binds)")
+    print("\nExtras:")
+    print("\t--assist\t - print out keybinds in the terminal")
 
 
 if __name__ == "__main__":
+    if "--assist" in sys.argv:
+        ASSIST_MODE = True
+
+        sys.argv.remove("--assist")
+
     if len(sys.argv) == 2:
         arg = sys.argv[1]
 
