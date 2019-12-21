@@ -43,6 +43,37 @@ When `1` is held, the `2` and `3` keys will become bound to `open
 daily_planner.txt` and `open monthly_planner.txt`. Not pressing any of these and
 simply releasing the `1` key will launch the editor with an empty document.
 
+```
+BINDS {
+	KEY_KP1 {
+		ON_PRESS {
+			LAYER text-editor
+		}
+	}
+
+	LAYER text-editor {
+		KEY_KP1 {
+			ON_RELEASE {
+				RUN geany
+			}
+		}
+
+		KEY_KP2 {
+			ON_PRESS {
+				RUN geany ~/docs/daily_planner.txt
+			}
+		}
+
+		KEY_KP3 {
+			ON_PRESS {
+				RUN geany ~/docs/monthly_planner.txt
+			}
+		}
+	}
+}
+
+```
+
 #### Timed Layers
 
 The previous example detailed holding a key to reveal a layer. However, it's
@@ -50,13 +81,31 @@ also possible to switch to a layer and have it remain after releasing the button
 that triggered it. This is a timed layer.
 
 In this example, the `/` key activates a layer containing a number of text
-snippits that I commonly use while programming. Since there is no command bound
-to the release of the `/` key, MacroPad gives the user around 2 seconds to enter
-a followup keypress on the layer before returning to the default one.
+snippits that I commonly use while in the terminal. Since there is no command
+bound to the release of the `/` key, MacroPad gives the user around 2 seconds to
+enter a followup keypress on the layer before returning to the default one.
 
-After hitting my macro for printing out a long function name (`/` followed by
-`7`), MacroPad automatically switches back to the default layer and waits for
-input.
+After hitting my macro for going to my project directory (`/` followed by `4`),
+MacroPad automatically switches back to the default layer and waits for input.
+
+```
+BINDS {
+	KEY_KPSLASH {
+		ON_PRESS {
+			LAYER snippits
+		}
+	}
+
+	LAYER snippits {
+		KEY_KP4 {
+			ON_PRESS {
+				TYPE "cd ~/code/MacroPad"
+				KEY KEY_ENTER
+			}
+		}
+	}
+}
+```
 
 #### Hot Layers
 
@@ -64,6 +113,33 @@ This layer type is similar to a timed layer, except MacroPad doesn't return to
 the default layer after a keypress, allowing multiple macros to be fired on the
 same layer in succession. MacroPad resets to the default layer roughly 2 seconds
 after the last keypress is made.
+
+```
+BINDS {
+	KEY_KPPLUS {
+		ON_PRESS {
+			KEY KEY_F
+			HOTLAYER browser-nav
+		}
+	}
+
+	LAYER browser-nav {
+		KEY_KP0 {
+			BIND KEY_0
+		}
+
+		KEY_KP1 {
+			BIND KEY_1
+		}
+
+		KEY_KP2 {
+			BIND KEY_2
+		}
+
+		<snip: other keypad keys here>
+	}
+}
+```
 
 #### Mode Layers
 
@@ -82,58 +158,47 @@ In my personal MacroPad config, I have a `browser` mode layer that sets up the
 aforementioned functions, then provides timed layers and hot layers for things
 like link selection and choosing bookmarks.
 
-## Creating a Layout (by Example)
+```
+BINDS {
+	KEY_KPASTERISK {
+		ON_PRESS {
+			MODELAYER browser
+		}
+	}
 
-The best piece of advice I can give is to define your goals. This may seem
-obvious, but a bit of planning can avoid massive reconfiguring and unlearning
-bad habits/muscle memory later on.
+	LAYER browser {
+		KEY_KP1 {
+			BIND KEY_LEFTCTRL+KEY_U
+		}
 
-Here the goals for my main macropad:
+		KEY_KP2 {
+			BIND KEY_J
+		}
 
-* Workspace organization (i.e., window management.)
-* Quick launching of dev tools
-* "Bash snippits" for quick terminal use
-* A mode for browsing the web
+		KEY_KP3 {
+			BIND KEY_LEFTCTRL+KEY_D
+		}
 
-The two main layers will be `terminal` and `workspace`.
+		KEY_KP4 {
+			BIND KEY_LEFTSHIFT+KEY_H
+		}
 
-By default I will mark off the directional keys on the numpad (`2, 4, 6, 8`) for
-movement between windows. This is a function I want to work on the default layer
-since holding a modkey would require weird hand and finger placement.
+		KEY_KP6 {
+			BIND KEY_LEFTSHIFT+KEY_L
+		}
 
-### Terminal Layer
+		KEY_KP7 {
+			BIND KEY_LEFTSHIFT+KEY_K
+		}
 
-`1` will trigger the terminal layer.
+		KEY_KP8 {
+			BIND KEY_K
+		}
 
-Pressing and releasing `1` will spawn a terminal, effectively turning `1` into a
-modkey. Holding `1` and hitting `2, 3, 4` will spawn a terminal in a specific
-directory depending on key. My current project's folder will be bound to `4`,
-for example.
-
-### Workspace Layer
-
-`5` activates the workspace layer.
-
-`6` tells my window manager that the next window will be opened to the right of
-the current focused window. `2` does the same, execpt it will open below the
-current window.
-
-Pressing `5` makes the current window fullscreen.
-
-### Snippits Layer
-
-`/` opens up the snippits layer. These are terminal commands.
-
-`4` goes to `~/code/MacroPad`.
-
-`.` navigates to the `~/.config` directory. It can also be held, after which
-pressing `5` will run `vim ~/.config/i3/config`.
-
-### Common Inputs
-
-Here are commonly-used inputs:
-
-#### 3-Window Layout
-
-`1->4 56 1->4 52 1->4`
+		KEY_KP9 {
+			BIND KEY_LEFTSHIFT+KEY_J
+		}
+	}
+}
+```
 
