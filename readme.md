@@ -112,28 +112,21 @@ To open my web brower to geekhack.org, I'd type `12` into the configred keypad.
 A similar keypress is performed for opening a terminal to my code directory:
 `21`.
 
-Here's an example configuration file that shows layers in action:
+Layers are defined in the `BINDS` section of the config file:
 
 ```
-<device path>
+BINDS {
+	KEY_KP1 {
+		ON_PRESS {
+			LAYER test-layer
+		}
+	}
 
-KEY_KP1
-	ON_PRESS LAYER web
-
-KEY_KP2
-	ON_PRESS LAYER terminal
-
-LAYER web
-	KEY_KP1
-		ON_PRESS RUN qutebrowser duckduckgo.com
-
-	KEY_KP2
-		ON_PRESS RUN qutebrowser geekhack.org
-
-LAYER terminal
-	KEY_KP1
-		ON_PRESS RUN cd ~/code && st
-
-	KEY_KP2
-		ON_PRESS RUN cd ~/site && st
-```
+	LAYER test-layer {
+		KEY_KP1 {
+			ON_PRESS {
+				RUN foo bar
+			}
+		}
+	}
+}

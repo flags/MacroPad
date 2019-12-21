@@ -103,7 +103,8 @@ def detectDevice():
         configFile = open(fileName, 'w')
 
         configFile.write("DEVICE {\n\tPATH %s\n}\n\n" % bestDevicePath)
-        configFile.write("# place binds below this line\n\n")
+        configFile.write("BINDS {\n\n}\n")
+
         configFile.close()
 
         print("\nFile saved.\n")
