@@ -15,6 +15,7 @@ mapping of the device on the fly.
 * An extra USB keyboard or numpad (see `Notes / Quirks`)
 * python3
 * python-evdev
+* `xdotool` - used for `TYPE` command
 * `input` group membership
 
 ## Notes / Quirks

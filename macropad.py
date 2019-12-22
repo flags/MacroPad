@@ -7,6 +7,7 @@ import sys
 import grp
 import os
 
+VERSION = 1.0
 DEBUG = False
 ASSIST_MODE = False
 NO_GROUP = False # for skipping `input` group checking
@@ -520,13 +521,14 @@ def main(devicePath):
     print("Done")
 
 def usage():
-    print("MacroPad.py - flags (2019)")
+    print("MacroPad.py - flags (2019) - ver. %f" % VERSION)
     print("Usage:")
     print("\t<file>\t\t - run MacroPad with configuration file")
     print("\t--detect <file>\t - select device and output default config file")
     print("\t--show <file>\t - print all key inputs to the terminal (will not fire binds)")
     print("\nExtras:")
     print("\t--assist\t - print out keybinds in the terminal")
+    print("\t--nogroup\t - ignore group requirement")
 
 
 if __name__ == "__main__":
