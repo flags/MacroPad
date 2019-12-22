@@ -293,7 +293,7 @@ def handleKey(event, debug=False):
     # layer.
     # this prevents lingering inputs from affecting future inputs.
     if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
-        if HOT_LAYER:
+        if debug and HOT_LAYER:
             print("Hot layer reset!")
 
         HOT_LAYER = False
@@ -301,7 +301,8 @@ def handleKey(event, debug=False):
             if not CURRENT_LAYER == LOCKED_LAYER:
                 setLayer(LOCKED_LAYER)
 
-                print("Returning to locked layer: %s" % LOCKED_LAYER)
+                if debug:
+                    print("Returning to locked layer: %s" % LOCKED_LAYER)
         elif not CURRENT_LAYER == "default":
             setLayer("default")
 
@@ -352,24 +353,11 @@ def assignKey(layer, keycode, state, callback):
 
     KEY_CALLBACK_MAP[layer][keycode][state].append(callback)
 
-# DEVICE_LAYOUT = []
-# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
-# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
-# DEVICE_LAYOUT.append(["BLANK", "KEY_KPSLAH", "KEY_KPASTERISK", "BLANK"])
-
 def showLayer():
     subprocess.Popen("notify-send -t %i \"%s\"" % (LAYER_TIMEOUT_MAX * 1000,
         CURRENT_LAYER), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # for row in DEVICE_LAYOUT:
-        # print("-------" * 4)
-        # for key in row:
-            # print("|  %s  |" % key, end='')
-        # print()
-
-    # print("-------" * 4)
-    # clear terminal
-    print('\x1b[2J') 
+    print('\x1b[2J') # clear terminal
     print(CURRENT_LAYER + '\n')
 
     if not CURRENT_LAYER in COMMENT_MAP:
@@ -379,17 +367,8 @@ def showLayer():
     keys = list(COMMENT_MAP[CURRENT_LAYER].keys())
     keys.sort()
 
-    # translate = {KEY_DOWN: "PRESS",
-            # KEY_UP: "RELEASE"}
-
     for key in keys:
         print("[ %s ] %s" % (key.split("KEY_")[1], COMMENT_MAP[CURRENT_LAYER][key]))
-
-        # for event in KEY_CALLBACK_MAP[CURRENT_LAYER][key]:
-            # if not event in translate:
-                # continue
-
-        # print("\t%s" % (COMMENT_MAP[CURRENT_LAYER][key]))
 
 def setLayer(layer, lock=False, hot=False):
     global CURRENT_LAYER
