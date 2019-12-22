@@ -4,10 +4,12 @@ import subprocess
 import evdev
 import time
 import sys
+import grp
 import os
 
 DEBUG = False
 ASSIST_MODE = False
+NO_GROUP = False # for skipping `input` group checking
 
 # enums
 KEY_UP = 0
@@ -41,6 +43,16 @@ def detectDevice():
     bestDevicePath = None
     loops = 5
     baseDir = "/dev/input/by-id/"
+
+    # check if user is part of `input` group
+    groups = [grp.getgrgid(g).gr_name for g in os.getgroups()]
+
+    if not NO_GROUP and not "input" in groups:
+        print("WARNING: You are NOT a member of the `input` group!")
+        print("MacroPad cannot detect devices.")
+        print("\nIf this is a mistake, run with `--nogroup`.")
+
+        return
 
     print("Welcome to MacroPad-detect")
     print("\nMake sure your device is plugged in, then press ENTER.")
@@ -512,6 +524,11 @@ if __name__ == "__main__":
         ASSIST_MODE = True
 
         sys.argv.remove("--assist")
+
+    if "--nogroup" in sys.argv:
+        NO_GROUP = True
+
+        sys.argv.remove("--nogroup")
 
     if len(sys.argv) == 2:
         arg = sys.argv[1]
