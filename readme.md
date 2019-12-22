@@ -10,6 +10,15 @@ can be plugged in and configured independently.
 MacroPad's most powerful feature is layering, which allows keys to change the
 mapping of the device on the fly.
 
+## WIP / Requesting Help
+
+Documentation lags behind the current featureset. I update this readme and the
+linked tutorials as often as possible, but it's a low priority.
+
+For those who like learning by example, I've included my
+[personal config](example.conf). It almost always has example of new
+functionality.
+
 ## Requirements
 
 * An extra USB keyboard or numpad (see `Notes / Quirks`)
@@ -111,4 +120,4 @@ Save the config file. Now run:
 
 # Example Config
 
-I've attached my personal config file to this repo: [keypad.conf](keypad.conf).
+I've attached my personal config file to this repo: [example.conf](example.conf).
