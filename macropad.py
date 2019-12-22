@@ -28,13 +28,15 @@ KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_RELEASE": KEY_UP,
         "ON_HOLD": KEY_HOLD}
 COMMENT_MAP = {}
+LAYER_OPTIONS = {}
 
 # global
 CURRENT_LAYER = "default"
 LAYER_LOCK = False
 LOCKED_PLAYER = "default"
-LAYER_TIMEOUT_MAX = 1.5
+DEFAULT_LAYER_TIMEOUT = 1.5
 LAST_KEY_EVENT_TIME = 0
+START_TIMEOUT_ON_KEYPRESS = False
 HOT_LAYER = False
 UI = None
 
@@ -196,9 +198,7 @@ def loadConfig(filePath):
             continue
 
         if not ' ' in line:
-            # one-offs
             if parsing == "device":
-                
                 line = line.lower()
 
                 if line == "passthrough":
@@ -209,6 +209,16 @@ def loadConfig(filePath):
                     print("Unknown command in section `device`: %s" % line)
 
                     return
+            elif parsing == "layer":
+                line = line.lower()
+
+                if line == "start_timeout_on_keypress":
+                    setLayerOption(selectedLayer, line, True)
+                else:
+                    print("Unknown command in section `%s`: %s" % (parsing, line))
+
+                    return
+
             continue
 
         key, _, value = line.partition(' ')
@@ -277,6 +287,8 @@ def loadConfig(filePath):
             bindCount += 1
         elif key == "comment":
             assignComment(selectedLayer, selectedKey, value)
+        elif key == "timeout":
+            setLayerOption(selectedLayer, "timeout", float(value))
         else:
             print("Unknown parsing layer on line %i: %s - %s" % (lineNum, key, value))
             return
@@ -288,11 +300,8 @@ def loadConfig(filePath):
 
     main(selectedDevice)
 
-def showKey(key, command):
-    subprocess.Popen("notify-send -t %i \"%s - %s\"" % (LAYER_TIMEOUT_MAX * 1000, key, command),
-            shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
 def handleKey(event, debug=False):
+    global START_TIMEOUT_ON_KEYPRESS
     global LAST_KEY_EVENT_TIME
     global HOT_LAYER
 
@@ -311,19 +320,25 @@ def handleKey(event, debug=False):
     # greater than some amount, then switch back to the default
     # layer.
     # this prevents lingering inputs from affecting future inputs.
-    if now - LAST_KEY_EVENT_TIME >= LAYER_TIMEOUT_MAX:
-        if debug and HOT_LAYER:
-            print("Hot layer reset!")
+    timeout = getLayerTimeout(CURRENT_LAYER)
 
-        HOT_LAYER = False
-        if LAYER_LOCK:
-            if not CURRENT_LAYER == LOCKED_LAYER:
-                setLayer(LOCKED_LAYER)
+    if now - LAST_KEY_EVENT_TIME >= timeout:
+        if START_TIMEOUT_ON_KEYPRESS:
+            START_TIMEOUT_ON_KEYPRESS = False
+            print("debug: waiting until next keypress")
+        else:
+            if debug and HOT_LAYER:
+                print("Hot layer reset!")
 
-                if debug:
-                    print("Returning to locked layer: %s" % LOCKED_LAYER)
-        elif not CURRENT_LAYER == "default":
-            setLayer("default")
+            HOT_LAYER = False
+            if LAYER_LOCK:
+                if not CURRENT_LAYER == LOCKED_LAYER:
+                    setLayer(LOCKED_LAYER)
+
+                    if debug:
+                        print("Returning to locked layer: %s" % LOCKED_LAYER)
+            elif not CURRENT_LAYER == "default":
+                setLayer("default")
 
     # track whether we fired a macro in case the user specified `PASSTHROUGH`
     fired = False
@@ -369,6 +384,37 @@ def assignComment(layer, keycode, value):
 
     print("WARNING: already assigned comment to %s - %s" % (layer, keycode))
 
+def setLayerOption(layer, key, value):
+    if not layer in LAYER_OPTIONS:
+        LAYER_OPTIONS[layer] = {}
+
+    if not key in LAYER_OPTIONS[layer]:
+        LAYER_OPTIONS[layer][key] = value
+
+        return
+
+    print("WARNING: already assigned %s to %s - %s" % (key, layer, value))
+
+def applyLayerOptions(layer):
+    if not layer in LAYER_OPTIONS:
+        return
+
+    for key in LAYER_OPTIONS[layer].keys():
+        if key == "start_timeout_on_keypress":
+            global START_TIMEOUT_ON_KEYPRESS
+
+            START_TIMEOUT_ON_KEYPRESS = True
+        elif key == "timeout":
+            pass
+        else:
+            print("Warning: Unhandled option: %s" % key)
+
+def getLayerTimeout(layer):
+    if layer in LAYER_OPTIONS and "timeout" in LAYER_OPTIONS[layer]:
+        return LAYER_OPTIONS[layer]["timeout"]
+
+    return DEFAULT_LAYER_TIMEOUT
+
 def assignKey(layer, keycode, state, callback):
     if not layer in KEY_CALLBACK_MAP:
         KEY_CALLBACK_MAP[layer] = {}
@@ -382,7 +428,8 @@ def assignKey(layer, keycode, state, callback):
     KEY_CALLBACK_MAP[layer][keycode][state].append(callback)
 
 def showLayer():
-    subprocess.Popen("notify-send -t %i \"%s\"" % (LAYER_TIMEOUT_MAX * 1000,
+    timeout = getLayerTimeout(CURRENT_LAYER)
+    subprocess.Popen("notify-send -t %i \"%s\"" % (timeout * 1000,
         CURRENT_LAYER), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     print('\x1b[2J') # clear terminal
@@ -405,6 +452,8 @@ def setLayer(layer, lock=False, hot=False):
     lastLayer = CURRENT_LAYER
     CURRENT_LAYER = layer
 
+    applyLayerOptions(layer)
+
     if lock:
         LOCKED_LAYER = layer
         # print("Locked layer: %s" % LOCKED_LAYER)
@@ -423,9 +472,6 @@ def setLayer(layer, lock=False, hot=False):
     if ASSIST_MODE:
         if not lastLayer == CURRENT_LAYER:
             showLayer()
-
-    # for keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
-        # showKey(str(keycode), "duh")
 
     return 0
 
