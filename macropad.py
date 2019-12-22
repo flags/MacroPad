@@ -10,6 +10,7 @@ import os
 DEBUG = False
 ASSIST_MODE = False
 NO_GROUP = False # for skipping `input` group checking
+PASSTHROUGH = False
 
 # enums
 KEY_UP = 0
@@ -194,6 +195,19 @@ def loadConfig(filePath):
             continue
 
         if not ' ' in line:
+            # one-offs
+            if parsing == "device":
+                
+                line = line.lower()
+
+                if line == "passthrough":
+                    global PASSTHROUGH
+
+                    PASSTHROUGH = True
+                else:
+                    print("Unknown command in section `device`: %s" % line)
+
+                    return
             continue
 
         key, _, value = line.partition(' ')
@@ -202,6 +216,10 @@ def loadConfig(filePath):
         if parsing == "device":
             if key == "path":
                 selectedDevice = value
+            else:
+                print("Unknown key in section `device`: %s" % key)
+
+                return
 
             continue
         elif parsing.upper() in KEYEVENT_REMAP:
@@ -306,6 +324,9 @@ def handleKey(event, debug=False):
         elif not CURRENT_LAYER == "default":
             setLayer("default")
 
+    # track whether we fired a macro in case the user specified `PASSTHROUGH`
+    fired = False
+
     if debug:
         if KEY_MAP[event.keycode]["state"] == KEY_DOWN:
             print("%s - KEY_DOWN" % event.keycode)
@@ -313,9 +334,13 @@ def handleKey(event, debug=False):
             print("%s - KEY_HOLD" % event.keycode)
         elif KEY_MAP[event.keycode]["state"] == KEY_UP:
             print("%s - KEY_UP" % event.keycode)
+
+        # do this so we don't pass keycodes to the system
+        fired = True
     else:
         if event.keycode in KEY_CALLBACK_MAP[CURRENT_LAYER]:
             if event.keystate in KEY_CALLBACK_MAP[CURRENT_LAYER][event.keycode]:
+                fired = True
                 resetLayer = False
 
                 # pull callbacks out of the dictionary and call them
@@ -329,6 +354,8 @@ def handleKey(event, debug=False):
                 if resetLayer:
                     if not (LAYER_LOCK or HOT_LAYER):
                         setLayer("default")
+
+    return fired
 
 def assignComment(layer, keycode, value):
     if not layer in COMMENT_MAP:
@@ -475,7 +502,11 @@ def main(devicePath):
             if event.type == evdev.ecodes.EV_KEY:
                 keyEvent = evdev.categorize(event)
 
-                handleKey(keyEvent, debug=DEBUG)
+                fired = handleKey(keyEvent, debug=DEBUG)
+
+                if not fired and PASSTHROUGH:
+                    UI.write_event(event)
+                    UI.syn()
     except KeyboardInterrupt:
         print("Interrupt.")
     except Exception as e:
