@@ -142,7 +142,6 @@ def loadConfig(filePath):
     selectedEvent = None
     selectedLayer = "default"
     parseStack = []
-    # blockNum = 0
     lineNum = 0
     bindCount = 0
 
@@ -184,7 +183,7 @@ def loadConfig(filePath):
             parseStack.pop()
 
             if parsing == "binds":
-                pass
+                selectedKey = None
             elif parsing == "device":
                 pass
             elif parsing == "layer":
@@ -416,6 +415,8 @@ def getLayerTimeout(layer):
     return DEFAULT_LAYER_TIMEOUT
 
 def assignKey(layer, keycode, state, callback):
+    assert(keycode != None)
+
     if not layer in KEY_CALLBACK_MAP:
         KEY_CALLBACK_MAP[layer] = {}
 
