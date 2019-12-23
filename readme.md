@@ -16,8 +16,10 @@ Documentation lags behind the current featureset. I update this readme and the
 linked tutorials as often as possible, but it's a low priority.
 
 For those who like learning by example, I've included my
-[personal config](example.conf). It almost always has example of new
+[personal config](example.conf). It almost always has examples of new
 functionality.
+
+If you're having trouble setting up a config, open up an issue and I will help.
 
 ## Requirements
 
