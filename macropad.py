@@ -12,6 +12,7 @@ DEBUG = False
 ASSIST_MODE = False
 NO_GROUP = False # for skipping `input` group checking
 PASSTHROUGH = False
+USING_DEVICE_NAME = False
 
 # enums
 KEY_UP = 0
@@ -44,7 +45,7 @@ UI = None
 def detectDevice():
     maxEventCount = 0
     bestDevice = None
-    bestDevicePath = None
+    bestDeviceName = None
     loops = 5
     baseDir = "/dev/input/by-id/"
 
@@ -59,11 +60,20 @@ def detectDevice():
         return
 
     print("Welcome to MacroPad-detect")
-    print("\nMake sure your device is plugged in, then press ENTER.")
+    print("\nMake sure your device is plugged in or turned on, then press ENTER.")
 
     input()
 
-    devices = [os.path.join(baseDir, p) for p in os.listdir(baseDir)]
+    print("Is your device connected via Bluetooth? y/(n)")
+
+    bluetooth = input().lower() == 'y'
+
+    if bluetooth:
+        print("\nTake note that non-Bluetooth devices can still be detected in this mode.\n")
+
+        devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    else:
+        devices = [os.path.join(baseDir, p) for p in os.listdir(baseDir)]
 
     print("** A total of %i devices were detected. **\n" % len(devices))
     print("MacroPad will now help you select the device you want to config.")
@@ -84,13 +94,16 @@ def detectDevice():
     while loops:
         loops -= 1
 
-        for devicePath in devices:
-            try:
-                device = evdev.device.InputDevice(devicePath)
-            except Exception as e:
-                print("Could not open device: %s" % e)
+        for _device in devices:
+            if bluetooth:
+                device = _device
+            else:
+                try:
+                    device = evdev.device.InputDevice(_device)
+                except Exception as e:
+                    print("Could not open device: %s" % e)
 
-                continue
+                    continue
 
             try:
                 eventCount = 0
@@ -101,7 +114,7 @@ def detectDevice():
                 if eventCount > maxEventCount:
                     maxEventCount = eventCount
                     bestDevice = device
-                    bestDevicePath = devicePath
+                    bestDeviceName = device.name
             except BlockingIOError:
                 pass
 
@@ -112,7 +125,7 @@ def detectDevice():
 
         return
 
-    print("\nDevice found: %s" % bestDevice.name)
+    print("\nDevice found: %s" % bestDeviceName)
     print("\nMacroPad will now generate a config file for this device.")
 
     fileName = input("Enter file name: ")
@@ -120,7 +133,11 @@ def detectDevice():
     try:
         configFile = open(fileName, 'w')
 
-        configFile.write("DEVICE {\n\tPATH %s\n}\n\n" % bestDevicePath)
+        if bluetooth:
+            configFile.write("DEVICE {\n\tNAME %s\n}\n\n" % bestDeviceName)
+        else:
+            configFile.write("DEVICE {\n\tPATH %s\n}\n\n" % bestDeviceName)
+
         configFile.write("BINDS {\n\n}\n")
 
         configFile.close()
@@ -226,6 +243,12 @@ def loadConfig(filePath):
         if parsing == "device":
             if key == "path":
                 selectedDevice = value
+            elif key == "name":
+                selectedDevice = value
+
+                global USING_DEVICE_NAME
+
+                USING_DEVICE_NAME = True
             else:
                 print("Unknown key in section `device`: %s" % key)
 
@@ -527,11 +550,25 @@ def type(text):
 
     return 1
 
+def getDeviceViaName(name):
+    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+
+    for device in devices:
+        if device.name == name:
+            return device
+
+    raise Exception("Device not found: %s\n" % name)
+
+    return None
+
 def main(devicePath):
     global UI
 
     # open the device via evdev
-    device = evdev.InputDevice(devicePath)
+    if USING_DEVICE_NAME:
+        device = getDeviceViaName(devicePath)
+    else:
+        device = evdev.InputDevice(devicePath)
 
     UI = evdev.uinput.UInput()
     # start consuming all inputs from the device
