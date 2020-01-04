@@ -7,7 +7,7 @@ import sys
 import grp
 import os
 
-VERSION = 1.0
+VERSION = 1.1
 DEBUG = False
 ASSIST_MODE = False
 NO_GROUP = False # for skipping `input` group checking
@@ -624,7 +624,7 @@ def main(devicePath):
     print("Done")
 
 def usage():
-    print("MacroPad.py - flags (2019) - ver. %f" % VERSION)
+    print("MacroPad.py - flags (2020) - ver. %.1f" % VERSION)
     print("Usage:")
     print("\t<file>\t\t - run MacroPad with configuration file")
     print("\t--detect <file>\t - select device and output default config file")
