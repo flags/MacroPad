@@ -557,20 +557,27 @@ def getDeviceViaName(name):
         if device.name == name:
             return device
 
-    raise Exception("Device not found: %s\n" % name)
+    print("Device not found: %s" % name)
 
     return None
 
-def main(devicePath):
-    global UI
-
+def listen(devicePath):
     # open the device via evdev
     if USING_DEVICE_NAME:
-        device = getDeviceViaName(devicePath)
+        while True:
+            device = getDeviceViaName(devicePath)
+
+            if device:
+                break
+            else:
+                print("Waiting")
+                time.sleep(1)
     else:
         device = evdev.InputDevice(devicePath)
 
-    UI = evdev.uinput.UInput()
+    if not device:
+        return
+
     # start consuming all inputs from the device
     try:
         device.grab()
@@ -594,13 +601,25 @@ def main(devicePath):
                     UI.syn()
     except KeyboardInterrupt:
         print("Interrupt.")
+    except OSError:
+        return 1
     except Exception as e:
         print(e)
 
     try:
         device.ungrab()
     except Exception as e:
-        print(e)
+        print("Warning: Nothing to ungrab.")
+
+    return 0
+
+def main(devicePath):
+    global UI
+
+    UI = evdev.uinput.UInput()
+
+    while listen(devicePath):
+        print("Reconnecting...")
 
     print("Done")
 
