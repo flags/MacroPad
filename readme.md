@@ -10,6 +10,13 @@ can be plugged in and configured independently.
 MacroPad's most powerful feature is layering, which allows keys to change the
 mapping of the device on the fly.
 
+### Changelog
+
+* 01-04-2020 - Alternate detection method now supports bluetooth devices. This is
+  checked during `--detect` and opens devices based on their name instead of
+  `by-id` path. As a result of supporting bluetooth, reconnect timeouts/waits
+  are in place.
+
 ## WIP / Requesting Help
 
 Documentation lags behind the current featureset. I update this readme and the
