@@ -347,7 +347,7 @@ def handleKey(event, debug=False):
     if now - LAST_KEY_EVENT_TIME >= timeout:
         if START_TIMEOUT_ON_KEYPRESS:
             START_TIMEOUT_ON_KEYPRESS = False
-            print("debug: waiting until next keypress")
+            # print("debug: waiting until next keypress")
         else:
             if debug and HOT_LAYER:
                 print("Hot layer reset!")
