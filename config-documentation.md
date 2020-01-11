@@ -202,3 +202,15 @@ BINDS {
 }
 ```
 
+### Events
+
+MacroPad fires callbacks when certain states are changed. For now, this just
+covers layer changing.
+
+```
+EVENTS {
+	LAYER_CHANGED {
+		RUN echo "%LAYER%" > /tmp/navpad && killall -s SIGUSR1 i3status
+	}
+}
+```
