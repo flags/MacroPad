@@ -18,6 +18,7 @@ USING_DEVICE_NAME = False
 KEY_UP = 0
 KEY_DOWN = 1
 KEY_HOLD = 2
+EVENT_LAYER_CHANGED = 1
 
 # reference list
 KEY_CODES = evdev.ecodes.keys.values()
@@ -30,6 +31,7 @@ KEYEVENT_REMAP = {"ON_PRESS": KEY_DOWN,
         "ON_HOLD": KEY_HOLD}
 COMMENT_MAP = {}
 LAYER_OPTIONS = {}
+EVENT_CALLBACKS = {}
 
 # global
 CURRENT_LAYER = "default"
@@ -158,6 +160,8 @@ def loadConfig(filePath):
     selectedKey = None
     selectedEvent = None
     selectedLayer = "default"
+    selectedEvent = None
+    mode = "device"
     parseStack = []
     lineNum = 0
     bindCount = 0
@@ -177,18 +181,30 @@ def loadConfig(filePath):
 
             # print("Parsing: %s" % keyword)
 
-            if keyword.startswith("key_"):
-                selectedKey = keyword.upper()
+            if keyword == "device":
+                mode = "device"
+            elif keyword == "events":
+                mode = "events"
+            elif keyword == "binds":
+                mode = "binds"
 
-                # print("Selected key: %s" % selectedKey)
+            if mode == "binds":
+                if keyword.startswith("key_"):
+                    selectedKey = keyword.upper()
 
+                    # print("Selected key: %s" % selectedKey)
+
+                    parseStack.append(keyword)
+                elif keyword.startswith("layer"):
+                    selectedLayer = keyword.split(' ')[1]
+
+                    # print("Selected layer: %s" % selectedLayer)
+
+                    parseStack.append("layer")
+                else:
+                    parseStack.append(keyword)
+            elif mode == "events":
                 parseStack.append(keyword)
-            elif keyword.startswith("layer"):
-                selectedLayer = keyword.split(' ')[1]
-
-                # print("Selected layer: %s" % selectedLayer)
-
-                parseStack.append("layer")
             else:
                 parseStack.append(keyword)
 
@@ -240,7 +256,7 @@ def loadConfig(filePath):
         key, _, value = line.partition(' ')
         key = key.lower()
 
-        if parsing == "device":
+        if mode == "device":
             if key == "path":
                 selectedDevice = value
             elif key == "name":
@@ -255,55 +271,69 @@ def loadConfig(filePath):
                 return
 
             continue
-        elif parsing.upper() in KEYEVENT_REMAP:
-            if key == "type":
-                assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                        lambda text=value, state=KEY_DOWN: type(text))
-            elif key == "key":
+        elif mode == "binds":
+            if parsing.upper() in KEYEVENT_REMAP:
+                if key == "type":
+                    assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                            lambda text=value, state=KEY_DOWN: type(text))
+                elif key == "key":
+                    binds = value.split('+')
+                    assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                            lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
+                                keyCode, state))
+                    assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                            lambda keyCode=binds, state=KEY_UP: keyInput("key",
+                                keyCode, state))
+                elif key == "layer":
+                    assignKey(selectedLayer, selectedKey,
+                            KEYEVENT_REMAP[parsing.upper()],
+                            lambda layer=value: setLayer(layer))
+                elif key == "modelayer":
+                    assignKey(selectedLayer, selectedKey,
+                            KEYEVENT_REMAP[parsing.upper()],
+                            lambda layer=value: setLayer(layer, lock=True))
+                elif key == "hotlayer":
+                    assignKey(selectedLayer, selectedKey,
+                            KEYEVENT_REMAP[parsing.upper()],
+                            lambda layer=value: setLayer(layer, hot=True))
+                elif key == "run":
+                    assignKey(selectedLayer, selectedKey,
+                            KEYEVENT_REMAP[parsing.upper()],
+                            lambda value=value: runCommand(value))
+                else:
+                    print("Unknown: line %i:" % lineNum, key, value)
+                    return
+
+                bindCount += 1
+            elif key == "bind":
                 binds = value.split('+')
                 assignKey(selectedLayer, selectedKey, KEY_DOWN,
                         lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
                             keyCode, state))
-                assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                assignKey(selectedLayer, selectedKey, KEY_HOLD,
+                        lambda keyCode=binds, state=KEY_HOLD: keyInput("key",
+                            keyCode, state))
+                assignKey(selectedLayer, selectedKey, KEY_UP,
                         lambda keyCode=binds, state=KEY_UP: keyInput("key",
                             keyCode, state))
-            elif key == "layer":
-                assignKey(selectedLayer, selectedKey,
-                        KEYEVENT_REMAP[parsing.upper()],
-                        lambda layer=value: setLayer(layer))
-            elif key == "modelayer":
-                assignKey(selectedLayer, selectedKey,
-                        KEYEVENT_REMAP[parsing.upper()],
-                        lambda layer=value: setLayer(layer, lock=True))
-            elif key == "hotlayer":
-                assignKey(selectedLayer, selectedKey,
-                        KEYEVENT_REMAP[parsing.upper()],
-                        lambda layer=value: setLayer(layer, hot=True))
-            elif key == "run":
-                assignKey(selectedLayer, selectedKey,
-                        KEYEVENT_REMAP[parsing.upper()],
-                        lambda value=value: runCommand(value))
+                bindCount += 1
+            elif key == "comment":
+                assignComment(selectedLayer, selectedKey, value)
+            elif key == "timeout":
+                setLayerOption(selectedLayer, "timeout", float(value))
             else:
-                print("Unknown: line %i:" % lineNum, key, value)
+                print("Unknown key on line %i: %s" % (lineNum, key))
                 return
-
-            bindCount += 1
-        elif key == "bind":
-            binds = value.split('+')
-            assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                    lambda keyCode=binds, state=KEY_DOWN: keyInput("key",
-                        keyCode, state))
-            assignKey(selectedLayer, selectedKey, KEY_HOLD,
-                    lambda keyCode=binds, state=KEY_HOLD: keyInput("key",
-                        keyCode, state))
-            assignKey(selectedLayer, selectedKey, KEY_UP,
-                    lambda keyCode=binds, state=KEY_UP: keyInput("key",
-                        keyCode, state))
-            bindCount += 1
-        elif key == "comment":
-            assignComment(selectedLayer, selectedKey, value)
-        elif key == "timeout":
-            setLayerOption(selectedLayer, "timeout", float(value))
+        elif mode == "events":
+            if parsing == "layer_changed":
+                if key == "run":
+                    addEventCallback(EVENT_LAYER_CHANGED, "run", value)
+                else:
+                    print("Unknown key on line %i: %s" % (lineNum, key))
+                    return
+            else:
+                print("Unknown parsing layer on line %i: %s" % (lineNum, parsing))
+                return
         else:
             print("Unknown parsing layer on line %i: %s - %s" % (lineNum, key, value))
             return
@@ -401,6 +431,23 @@ def assignComment(layer, keycode, value):
 
     print("WARNING: already assigned comment to %s - %s" % (layer, keycode))
 
+def addEventCallback(event, command, value):
+    if not event in EVENT_CALLBACKS:
+        EVENT_CALLBACKS[event] = []
+
+    EVENT_CALLBACKS[event].append({"command": command, "value": value})
+
+def triggerEventCallback(event):
+    if not event in EVENT_CALLBACKS:
+        return
+
+    for callback in EVENT_CALLBACKS[event]:
+        newValue = callback["value"]
+        newValue = newValue.replace("%LAYER%", CURRENT_LAYER)
+
+        if callback["command"] == "run":
+            runCommand(newValue)
+
 def setLayerOption(layer, key, value):
     if not layer in LAYER_OPTIONS:
         LAYER_OPTIONS[layer] = {}
@@ -469,7 +516,13 @@ def setLayer(layer, lock=False, hot=False):
     global LAYER_LOCK, LOCKED_LAYER, HOT_LAYER
 
     lastLayer = CURRENT_LAYER
+
+    layerChanged = not CURRENT_LAYER == layer
+
     CURRENT_LAYER = layer
+
+    if layerChanged:
+        triggerEventCallback(EVENT_LAYER_CHANGED)
 
     applyLayerOptions(layer)
 
