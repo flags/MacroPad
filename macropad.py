@@ -267,34 +267,27 @@ def loadConfig(filePath):
                 assignKey(selectedLayer, selectedKey, KEY_DOWN,
                         lambda keyCode=binds, state=KEY_UP: keyInput("key",
                             keyCode, state))
-                bindCount += 1
             elif key == "layer":
                 assignKey(selectedLayer, selectedKey,
                         KEYEVENT_REMAP[parsing.upper()],
                         lambda layer=value: setLayer(layer))
-
-                bindCount += 1
             elif key == "modelayer":
                 assignKey(selectedLayer, selectedKey,
                         KEYEVENT_REMAP[parsing.upper()],
                         lambda layer=value: setLayer(layer, lock=True))
-
-                bindCount += 1
             elif key == "hotlayer":
                 assignKey(selectedLayer, selectedKey,
                         KEYEVENT_REMAP[parsing.upper()],
                         lambda layer=value: setLayer(layer, hot=True))
-
-                bindCount += 1
             elif key == "run":
                 assignKey(selectedLayer, selectedKey,
                         KEYEVENT_REMAP[parsing.upper()],
                         lambda value=value: runCommand(value))
-
-                bindCount += 1
             else:
                 print("Unknown: line %i:" % lineNum, key, value)
                 return
+
+            bindCount += 1
         elif key == "bind":
             binds = value.split('+')
             assignKey(selectedLayer, selectedKey, KEY_DOWN,
