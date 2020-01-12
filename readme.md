@@ -12,6 +12,8 @@ mapping of the device on the fly.
 
 ### Changelog
 
+* 01-12-2020 - Added `events` section to config for firing commands based on
+  state changes.
 * 01-04-2020 - Alternate detection method now supports bluetooth devices. This is
   checked during `--detect` and opens devices based on their name instead of
   `by-id` path. As a result of supporting bluetooth, reconnect timeouts/waits
