@@ -675,7 +675,7 @@ def usage():
     print("MacroPad.py - flags (2020) - ver. %.1f" % VERSION)
     print("Usage:")
     print("\t<file>\t\t - run MacroPad with configuration file")
-    print("\t--detect <file>\t - select device and output default config file")
+    print("\t--detect\t - select device and output default config file")
     print("\t--show <file>\t - print all key inputs to the terminal (will not fire binds)")
     print("\nExtras:")
     print("\t--assist\t - print out keybinds in the terminal")
