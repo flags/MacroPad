@@ -409,7 +409,7 @@ def handleKey(event, debug=False):
                     if callback():
                         resetLayer = True
 
-                    time.sleep(.1)
+                    time.sleep(.01)
 
                 # record the time at which the event was executed. see above
                 LAST_KEY_EVENT_TIME = now
