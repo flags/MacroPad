@@ -42,6 +42,7 @@ LAST_KEY_EVENT_TIME = 0
 START_TIMEOUT_ON_KEYPRESS = False
 HOT_LAYER = False
 UI = None
+WAIT_TIME = 0
 
 
 def detectDevice():
@@ -300,6 +301,9 @@ def loadConfig(filePath):
                     assignKey(selectedLayer, selectedKey,
                             KEYEVENT_REMAP[parsing.upper()],
                             lambda value=value: runCommand(value))
+                elif key == "wait":
+                    assignKey(selectedLayer, selectedKey, KEY_DOWN,
+                            lambda text=value, state=KEY_DOWN: wait(int(text)))
                 else:
                     print("Unknown: line %i:" % lineNum, key, value)
                     return
@@ -349,6 +353,7 @@ def handleKey(event, debug=False):
     global START_TIMEOUT_ON_KEYPRESS
     global LAST_KEY_EVENT_TIME
     global HOT_LAYER
+    global WAIT_TIME
 
     now = time.time()
     last_hit = now
@@ -409,7 +414,12 @@ def handleKey(event, debug=False):
                     if callback():
                         resetLayer = True
 
-                    time.sleep(.01)
+                    if WAIT_TIME:
+                        time.sleep(WAIT_TIME)
+
+                        WAIT_TIME = 0
+                    else:
+                        time.sleep(.01)
 
                 # record the time at which the event was executed. see above
                 LAST_KEY_EVENT_TIME = now
@@ -597,6 +607,11 @@ def type(text):
             stderr=subprocess.PIPE)
 
     return 1
+
+def wait(seconds):
+    global WAIT_TIME
+
+    WAIT_TIME = seconds
 
 def getDeviceViaName(name):
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
