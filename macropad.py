@@ -303,7 +303,7 @@ def loadConfig(filePath):
                             lambda value=value: runCommand(value))
                 elif key == "wait":
                     assignKey(selectedLayer, selectedKey, KEY_DOWN,
-                            lambda text=value, state=KEY_DOWN: wait(int(text)))
+                            lambda text=value, state=KEY_DOWN: wait(float(text)))
                 else:
                     print("Unknown: line %i:" % lineNum, key, value)
                     return
