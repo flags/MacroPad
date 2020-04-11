@@ -689,6 +689,9 @@ def listen(devicePath):
     logging.info("Thread %s: finishing", name)
 
 def focusHandler(event, data):
+    if not "container" in data or not "window_properties" in data["container"]:
+        return
+
     window = data["container"]["window_properties"]["instance"]
 
     if window in KEY_CALLBACK_MAP:
