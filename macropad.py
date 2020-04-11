@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
 import subprocess
+import threading
 import evdev
 import time
 import sys
 import grp
 import os
+
+try:
+    import i3msg as i3
+
+    I3_ENABLED = True
+except:
+    I3_ENABLED = False
 
 VERSION = 1.1
 DEBUG = False
@@ -676,8 +684,23 @@ def listen(devicePath):
 
     return 0
 
+    logging.info("Thread %s: starting", name)
+    time.sleep(2)
+    logging.info("Thread %s: finishing", name)
+
+def focusHandler(event, data):
+    window = data["container"]["window_properties"]["instance"]
+
+    if window in KEY_CALLBACK_MAP:
+        setLayer(window, lock=True)
+    else:
+        setLayer("default", lock=True)
+
 def main(devicePath):
     global UI
+
+    if I3_ENABLED:
+        i3.subscribe(['window'], focusHandler)
 
     UI = evdev.uinput.UInput()
 
