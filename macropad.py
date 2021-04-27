@@ -8,12 +8,16 @@ import sys
 import grp
 import os
 
-try:
-    import i3msg as i3
 
-    I3_ENABLED = True
-except:
+if "--no-i3" in sys.argv:
     I3_ENABLED = False
+else:
+    try:
+        import i3msg as i3
+
+        I3_ENABLED = True
+    except:
+        I3_ENABLED = False
 
 VERSION = 1.1
 DEBUG = False
@@ -665,11 +669,23 @@ def listen(devicePath):
             if event.type == evdev.ecodes.EV_KEY:
                 keyEvent = evdev.categorize(event)
 
+                # print(keyEvent.keycode)
+
                 fired = handleKey(keyEvent, debug=DEBUG)
 
                 if not fired and PASSTHROUGH:
                     UI.write_event(event)
                     UI.syn()
+            elif event.type == evdev.ecodes.EV_REL:
+                mouseEvent = evdev.categorize(event)
+
+                print(mouseEvent)
+            elif event.type == evdev.ecodes.EV_MSC:
+                mouseEvent = evdev.categorize(event)
+
+                print(event)
+            elif DEBUG:
+                print(evdev.ecodes.EV[event.type])
     except KeyboardInterrupt:
         print("Interrupt.")
     except OSError:
@@ -692,7 +708,7 @@ def focusHandler(event, data):
     if not "container" in data or not "window_properties" in data["container"]:
         return
 
-    window = data["container"]["window_properties"]["instance"]
+    window = data["container"]["window_properties"]["class"].lower()
 
     if window in KEY_CALLBACK_MAP:
         setLayer(window, lock=True)
