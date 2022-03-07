@@ -710,6 +710,9 @@ def focusHandler(event, data):
     if not "container" in data or not "window_properties" in data["container"]:
         return
 
+    if not "class" in data["container"]["window_properties"]:
+        return
+
     window = data["container"]["window_properties"]["class"].lower()
 
     if window in KEY_CALLBACK_MAP:
